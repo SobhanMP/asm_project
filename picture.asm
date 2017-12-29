@@ -175,7 +175,6 @@ load	proc	near
 
 
 		lea	si,	mbb
-		push	cx
 		mov	cx,	32
 		melo:	movsw;r
 			add	di,	4094
@@ -186,10 +185,9 @@ load	proc	near
 
 			sub	di,	4096
 			sub	di,	4096
-
-			mov	cx,	counter
 			loop	melo
 
+		mov	cx,	counter
 		loop	relo
 
 	;close file
