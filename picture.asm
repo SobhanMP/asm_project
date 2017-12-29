@@ -30,7 +30,7 @@ __data	segment	'data'
 	py	dw	64
 ;file stuff
 	handle	dw	?
-	fname	db	"lenna.ff", 0
+	fname	db	"C:\lenna.ff", 0
 	;my big buffer
 	mbb	db	8,	?,	9	dup('$')
 
