@@ -6,6 +6,7 @@ __data	segment	'data'
 ;let's go with grey scale
 ;let's assume our filters use a 7 * 7 window
 
+	counter dw 0
 
 	pr	dw	4096	dup(0)
 	pg	dw	4096	dup(0)
@@ -152,7 +153,7 @@ load	proc	near
 	
 
 	lea	di,	pr
-	relo:	push	cx
+	relo:	mov	counter,	cx
 		mov	ah,	3fh
 		mov	cx,	8
 		lea	dx,	mbb
@@ -183,7 +184,7 @@ load	proc	near
 		sub	di,	4096
 		sub	di,	4096
 
-		pop	cx
+		mov	cx,	counter
 		loop	relo
 
 	;close file
