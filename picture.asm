@@ -33,7 +33,7 @@ __data	segment	'data'
 	handle	dw	?
 	fname	db	"C:\lenna.ff", 0
 	;my big buffer
-	mbb	db	100	dup('$')
+	mbb	db	1	dup('$')
 
 __data	ends
 
@@ -49,7 +49,7 @@ start:
 
 	lea	ax,	pr
 	mov	cx,	count
-	
+
 	call load
 
 	ml10:	call	lbuff
@@ -149,8 +149,8 @@ load	proc	near
 	lea	dx,	mbb
 	;read
 	mov	ah,	3fh
-	mov	cx,	4096
-	
+	mov	cx,	128
+
 
 	lea	di,	pr
 	relo:	mov	counter,	cx
@@ -172,19 +172,24 @@ load	proc	near
 		; int 21h
 		; pop	dx
 		; pop	ax;
-		
+
 
 		lea	si,	mbb
-		movsw;r
-		add	di,	4094
-		movsw;g
-		add	di,	4094
-		movsw;b
-		
-		sub	di,	4096
-		sub	di,	4096
+		push	cx
+		mov	cx,	32
+		melo:	movsw;r
+			add	di,	4094
+			movsw;g
+			add	di,	4094
+			movsw;b
+			add	si,	2;skipp alpha
 
-		mov	cx,	counter
+			sub	di,	4096
+			sub	di,	4096
+
+			mov	cx,	counter
+			loop	melo
+
 		loop	relo
 
 	;close file
