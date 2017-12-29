@@ -32,8 +32,11 @@ __data	segment	'data'
 ;file stuff
 	handle	dw	?
 	fname	db	"C:\lenna.ff", 0
+	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	;my big buffer
-	mbb	db	256	dup('$'),	'$'
+	mbb	db	12288	dup(?)
+	obuf	db	100	dup('$')
+	buffer db	33	dup('$')
 
 __data	ends
 
@@ -51,7 +54,9 @@ start:
 	mov	cx,	count
 
 	call load
-
+	mov	ah,	09h
+	lea	dx,	fread
+	int	21h
 	ml10:	call	lbuff
 		;call	fucking_kernel
 		inc	ax
@@ -132,69 +137,47 @@ load	proc	near
 	mov	ah,	3fh
 	int	21h
 
-	push	ax
-	push	dx
-	lea	dx,	mbb
-	mov	ah,	09h
-	int	21h
-	mov ah, 2
-	mov dl, 10
-	int 21h
-	mov dl, 13
-	mov ah, 02h
-	int 21h
-	pop	dx
-	pop	ax;
-
 	lea	dx,	mbb
 	;read
 	mov	ah,	3fh
-	mov	cx,	128
+	mov	cx,	12288
+	lea	dx,	mbb
+	int	21h
 
+	mov	ah,	09h
+	lea	dx,	fread
+	int	21h
 
-	lea	di,	pr
-	relo:	mov	counter,	cx
-		mov	ah,	3fh
-		mov	cx,	8
-		lea	dx,	mbb
-		int	21h
+	lea	di,	mbb
+	mov	cx,	4096
+	mov	bx,	10
+	mov	ax,	0
+	bread:	movsw;r
+		add	di,	4094
+		movsw;g
+		add	di,	4094
+		movsw;b
+		add	si,	2;skipp alpha
+		sub	di,	4096
+		sub	di,	4096
 
-		; push	ax
-		; push	dx
-		; lea	dx,	mbb
-		; mov	ah,	09h
-		; int	21h
-		; mov ah, 2
-		; mov dl, 10
-		; int 21h
-		; mov dl, 13
-		; mov ah, 02h
-		; int 21h
-		; pop	dx
-		; pop	ax;
-
-
-		lea	si,	mbb
-		mov	cx,	32
-		melo:	movsw;r
-			add	di,	4094
-			movsw;g
-			add	di,	4094
-			movsw;b
-			add	si,	2;skipp alpha
-
-			sub	di,	4096
-			sub	di,	4096
-			loop	melo
-
-		mov	cx,	counter
-		loop	relo
+		inc	al
+		cmp	al,	10
+		jne	nopr
+		mov	ax,	cx
+		call print
+		mov	ax,	0
+	nopr:	loop	bread
 
 	;close file
 	mov	bx,	HANDLE
 	mov	ax,	3eh
 	int	21h
 	lea	dx,	mbb
+
+	mov	ah,	09h
+	lea	dx,	fread
+	int	21h
 
 	pop	si
 	pop	di
@@ -207,6 +190,40 @@ load	proc	near
 	ret
 load	endp
 
+print	proc	near;print ax
+	;save registers we are going to use
+	push	ax
+	push	bx
+	push	dx
+	push	di
+	;prepare for saving
+	mov	bx,	10
+	mov	di,	31
+	conv:	div	bx
+		;store the remainder's character
+		add	ah,	'0'
+		mov	buffer[2 + di],	ah
+		;fix ax to be the number it's supposed to be
+		mov	ah,	0
+		dec	di
+		;end of loop condition
+		cmp	al,	0
+		jne	conv
+
+	;since di + 1 + buffer points to the beginning of the string
+	;and there is a $ sign at the end we can use this
+	inc	di
+	lea	dx,	buffer[2 + di]
+	mov	ah,	09H
+	int	21h
+	;restor old flags
+	pop	di
+	pop	dx
+	pop	bx
+	pop	ax
+
+	ret
+print	endp
 __code	ends
 
 end	start
