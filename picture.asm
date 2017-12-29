@@ -32,7 +32,7 @@ __data	segment	'data'
 	handle	dw	?
 	fname	db	"C:\lenna.ff", 0
 	;my big buffer
-	mbb	db	8,	?,	9	dup('$')
+	mbb	db	100	dup('$')
 
 __data	ends
 
@@ -48,6 +48,8 @@ start:
 
 	lea	ax,	pr
 	mov	cx,	count
+	
+	call load
 
 	ml10:	call	lbuff
 		;call	fucking_kernel
@@ -57,6 +59,7 @@ start:
 		;retur dos 2 style
 	mov	ax,	4c00h
 	int	21h
+	lea	dx,	mbb
 main	endp
 
 
@@ -119,6 +122,7 @@ load	proc	near
 	mov	al,	0;read
 	mov	ah,	3dh;
 	int	21h
+	lea	dx,	mbb
 	; FIXME HANDLE OPENNING ERRORS
 	;store file handle for later usage
 	mov	bx,	ax
@@ -126,16 +130,19 @@ load	proc	near
 	mov	cx,	16;8 farbfeld,4width,4height
 	mov	ah,	3fh
 	int	21h
+	lea	dx,	mbb
 	;read
 	mov	ah,	3fh
 	mov	cx,	4096
-
+	
 
 	lea	di,	pr
 	relo:	push	cx
+		mov	ah,	3fh
 		mov	cx,	8
 		lea	dx,	mbb
 		int	21h
+		lea	dx,	mbb
 
 		lea	si,	mbb
 		movsw;r
@@ -143,10 +150,7 @@ load	proc	near
 		movsw;g
 		add	di,	4094
 		movsw;b
-		add	di,	4094
-		movsw;a
-
-		sub	di,	4096
+		
 		sub	di,	4096
 		sub	di,	4096
 
@@ -157,6 +161,7 @@ load	proc	near
 	mov	bx,	HANDLE
 	mov	ax,	3eh
 	int	21h
+	lea	dx,	mbb
 
 	pop	si
 	pop	di
