@@ -36,7 +36,7 @@ __data	segment	'data'
 	;my big buffer
 	mbb	db	12288	dup(?)
 	obuf	db	100	dup('$')
-	buffer db	33	dup('$')
+	buffer db	32	dup('$'), 	 10,	13,	'$'
 
 __data	ends
 
@@ -194,20 +194,23 @@ print	proc	near;print ax
 	;save registers we are going to use
 	push	ax
 	push	bx
+	push	cx
 	push	dx
 	push	di
 	;prepare for saving
 	mov	bx,	10
 	mov	di,	31
-	conv:	div	bx
+	mov	cx,	ax
+	conv:	mov	dx,	0
+		div	bx
 		;store the remainder's character
-		add	ah,	'0'
-		mov	buffer[2 + di],	ah
+		add	dl,	'0'
+		mov	buffer[2 + di],	dl
 		;fix ax to be the number it's supposed to be
-		mov	ah,	0
 		dec	di
+
 		;end of loop condition
-		cmp	al,	0
+		cmp	ax,	0
 		jne	conv
 
 	;since di + 1 + buffer points to the beginning of the string
@@ -219,6 +222,7 @@ print	proc	near;print ax
 	;restor old flags
 	pop	di
 	pop	dx
+	pop	cx
 	pop	bx
 	pop	ax
 
