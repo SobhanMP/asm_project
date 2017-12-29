@@ -33,7 +33,7 @@ __data	segment	'data'
 	handle	dw	?
 	fname	db	"C:\lenna.ff", 0
 	;my big buffer
-	mbb	db	1	dup('$')
+	mbb	db	256	dup('$'),	'$'
 
 __data	ends
 
