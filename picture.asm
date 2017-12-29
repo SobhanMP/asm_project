@@ -36,7 +36,7 @@ __data	segment	'data'
 	;my big buffer
 	mbb	db	12288	dup(?)
 	obuf	db	100	dup('$')
-	buffer db	32	dup('$'), 	 10,	13,	'$'
+	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
 
 __data	ends
 
