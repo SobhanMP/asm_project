@@ -1,6 +1,3 @@
-_stack	segment	stack	'stack'
-	dw	1000	dup(?)
-_stack	ends
 
 __data	segment	'data'
 ;let's go with grey scale
@@ -37,8 +34,13 @@ __data	segment	'data'
 	mbb	db	12288	dup(?)
 	obuf	db	100	dup('$')
 	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
+		db	100 dup('$')
 
 __data	ends
+
+_stack	segment	stack	'stack'
+	dw	32000	dup('$')
+_stack	ends
 
 __code	segment	'code'
 
@@ -50,13 +52,12 @@ start:
 	mov	ds,	ax
 	mov	es,	ax;for movs
 
+
+	call load
+
 	lea	ax,	pr
 	mov	cx,	count
 
-	call load
-	mov	ah,	09h
-	lea	dx,	fread
-	int	21h
 	ml10:	call	lbuff
 		;call	fucking_kernel
 		inc	ax
@@ -65,7 +66,7 @@ start:
 		;retur dos 2 style
 	mov	ax,	4c00h
 	int	21h
-	lea	dx,	mbb
+
 main	endp
 
 
@@ -148,7 +149,7 @@ load	proc	near
 	lea	dx,	fread
 	int	21h
 
-	lea	di,	mbb
+	lea	di,	pr
 	mov	cx,	4096
 	mov	bx,	10
 	mov	ax,	0
@@ -161,13 +162,17 @@ load	proc	near
 		sub	di,	4096
 		sub	di,	4096
 
-		inc	al
-		cmp	al,	10
+		inc	ax
+		cmp	ax,	1000
 		jne	nopr
-		mov	ax,	cx
-		call print
-		mov	ax,	0
+			mov	ax,	cx
+			call print
+
+			mov	ax,	0
 	nopr:	loop	bread
+
+	mov	ax,	4c00h
+	int	21h
 
 	;close file
 	mov	bx,	HANDLE
