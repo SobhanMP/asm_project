@@ -130,6 +130,21 @@ load	proc	near
 	mov	cx,	16;8 farbfeld,4width,4height
 	mov	ah,	3fh
 	int	21h
+
+	push	ax
+	push	dx
+	lea	dx,	mbb
+	mov	ah,	09h
+	int	21h
+	mov ah, 2
+	mov dl, 10
+	int 21h
+	mov dl, 13
+	mov ah, 02h
+	int 21h
+	pop	dx
+	pop	ax;
+
 	lea	dx,	mbb
 	;read
 	mov	ah,	3fh
@@ -142,7 +157,21 @@ load	proc	near
 		mov	cx,	8
 		lea	dx,	mbb
 		int	21h
-		lea	dx,	mbb
+
+		; push	ax
+		; push	dx
+		; lea	dx,	mbb
+		; mov	ah,	09h
+		; int	21h
+		; mov ah, 2
+		; mov dl, 10
+		; int 21h
+		; mov dl, 13
+		; mov ah, 02h
+		; int 21h
+		; pop	dx
+		; pop	ax;
+		
 
 		lea	si,	mbb
 		movsw;r
