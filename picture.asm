@@ -1,37 +1,43 @@
-
+ILEN	EQU	10
+ISIZE	EQU	100
+IFSIZE	EQU	400
+OLEN	EQU	7
+OSIZE	EQU	49
 __data	segment	'data'
 ;let's go with grey scale
 ;let's assume our filters use a 7 * 7 window
 
 	counter dw 0
-
-	pr	dw	4096	dup(0)
-	pg	dw	4096	dup(0)
-	pb	dw	4096	dup(0)
-
-
-	outr	dw	4096	dup(0)
-	outg	dw	4096	dup(0)
-	outb	dw	4096	dup(0)
-	count	dw	4096
-
-	ir	dw	49	dup(1)
-	ig	dw	49	dup(1)
-	ib	dw	49	dup(1)
+	count	dw	ISIZE
+	pr	dw	ISIZE	dup(0)
+	pg	dw	ISIZE	dup(0)
+	pb	dw	ISIZE	dup(0)
 
 
-	len	dw	49
-	x	dw	7
-	y	dw	7
 
-	px	dw	64
-	py	dw	64
+	ir	dw	OSIZE	dup(1)
+	ig	dw	OSIZE	dup(1)
+	ib	dw	OSIZE	dup(1)
+
+	r	dw	?
+	g	dw	?
+	b	dw	?
+
+	len	dw	OSIZE
+	x	dw	OLEN
+	y	dw	OLEN
+
+	px	dw	ILEN
+	py	dw	ILEN
 ;file stuff
 	handle	dw	?
-	fname	db	"C:\lenna.ff", 0
+	head	db	"farbfeld"
+		db	0,0,0,ILEN,0,0,0,ILEN
+	fname	db	"C:\small_lenna.ff", 0
+	aname	db	"C:\test.ff",	0
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	;my big buffer
-	mbb	db	12288	dup(?)
+	mbb	db	IFSIZE	dup(?)
 	obuf	db	100	dup('$')
 	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
 		db	100 dup('$')
@@ -54,21 +60,71 @@ start:
 
 
 	call load
-
-	lea	ax,	pr
-	mov	cx,	count
-
-	ml10:	call	lbuff
-		;call	fucking_kernel
-		inc	ax
-		loop	ml10
-
-		;retur dos 2 style
-	mov	ax,	4c00h
+	mov	ah,	09h
+	lea	dx,	fread
 	int	21h
 
+
+	lea	ax,	ir
+	mov	cx,	count
+	lea	di,	mbb
+	ml10:	call	lbuff
+		call	fuck
+		add	di,	8
+		inc	ax
+		loop	ml10
+	call write
+	;retur dos 2 style
+	mov	ax,	4c00h
+	int	21h
 main	endp
 
+fuck	proc	near
+	push	ax
+	mov	ax,	ir
+	mov	[di + 0],	ax
+	mov	ax,	ig
+	mov	[di + 2],	ax
+	mov	ax,	ib
+	mov	[di + 4],	ax
+
+	mov	ax,	-1
+	mov	[di + 6],	ax
+
+	pop	ax
+	ret
+fuck	endp
+
+write	proc	near
+	push	ax
+	push	bx
+	push	cx
+	push	dx
+	;create a new file
+	mov	ah,	3ch
+	mov	cx,	0
+	lea	dx,	aname
+	int	21h
+	;write header
+	mov	bx,	ax;handle
+	mov	cx,	16
+	lea	dx,	head
+	mov	ah,	40h
+	int	21h
+	;write picture
+	mov	ah,	40h
+	mov	cx,	IFSIZE
+	lea	dx,	mbb
+	int	21h
+	;close file
+	mov	ah,	3eh
+	int	21h
+	pop	dx
+	pop	cx
+	pop	bx
+	pop	ax
+	ret
+write	endp
 
 lbuff	proc	near;start at ax
 	push	ax
@@ -84,7 +140,7 @@ lbuff	proc	near;start at ax
 
 	cld
 
-	mov	dl,	4;color counter
+	mov	dl,	3;color counter
 
 	buff:	mov	bx,	y;row counter
 		buff10:
@@ -98,7 +154,7 @@ lbuff	proc	near;start at ax
 			cmp	bx,	0
 			jne	buff10
 
-		add	ax,	4096
+		add	ax,	ISIZE
 		mov	si,	ax
 
 		dec	dl
@@ -141,7 +197,7 @@ load	proc	near
 	lea	dx,	mbb
 	;read
 	mov	ah,	3fh
-	mov	cx,	12288
+	mov	cx,	IFSIZE
 	lea	dx,	mbb
 	int	21h
 
@@ -150,33 +206,29 @@ load	proc	near
 	int	21h
 
 	lea	di,	pr
-	mov	cx,	4096
+	mov	cx,	ISIZE
 	mov	bx,	10
 	mov	ax,	0
 	bread:	movsw;r
-		add	di,	4094
+		add	di,	ISIZE
 		movsw;g
-		add	di,	4094
+		add	di,	ISIZE
 		movsw;b
 		add	si,	2;skipp alpha
-		sub	di,	4096
-		sub	di,	4096
+		sub	di,	ISIZE
+		sub	di,	ISIZE
 
 		inc	ax
-		cmp	ax,	1000
+		cmp	ax,	100
 		jne	nopr
 			mov	ax,	cx
 			call print
 
 			mov	ax,	0
 	nopr:	loop	bread
-
-	mov	ax,	4c00h
-	int	21h
-
 	;close file
 	mov	bx,	HANDLE
-	mov	ax,	3eh
+	mov	ah,	3eh
 	int	21h
 	lea	dx,	mbb
 
