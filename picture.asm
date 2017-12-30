@@ -12,10 +12,6 @@ __data	segment	'data'
 
 	counter dw 0
 	count	dw	ISIZE
-	pr	dw	ISIZE	dup(0)
-	pg	dw	ISIZE	dup(0)
-	pb	dw	ISIZE	dup(0)
-
 	r	dw	?
 	g	dw	?
 	b	dw	?
@@ -43,9 +39,10 @@ __data	segment	'data'
 	msg_write_start	db	"starting writing",  10,	13,	'$'
 	msg_write_end	db	"finished writing",  10,	13,	'$'
 	;	10,	13,	'$'
-	;my big buffer
-	mbb	db	IFSIZE	dup(?)
+
 	obuf	db	100	dup('$')
+	pic	db	IFSIZE	dup(?)
+	cip	db	IFSIZE	dup(?)
 	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
 		db	100 dup('$')
 
@@ -78,11 +75,11 @@ start:
 
 
 	mov	cx,	count
-	lea	di,	mbb
-	lea	si,	pr
+	lea	di,	cip
+	lea	si,	pic
 	ml10:	call	fuck
 		add	di,	8
-		add	si,	2
+		add	si,	8
 		loop	ml10
 
 	call write
@@ -94,13 +91,14 @@ main	endp
 
 fuck	proc	near
 	push	ax
+
 	mov	ax,	[si + 0]
 	mov	[di + 0],	ax
-	mov	ax,	[si + DSIZE]
+	mov	ax,	[si + 2]
 	mov	[di + 2],	ax
-	mov	ax,	[si + DSIZE + DSIZE]
+	mov	ax,	[si + 4]
 	mov	[di + 4],	ax
-	mov	ax,	-1
+	mov	ax,	[si + 6]
 	mov	[di + 6],	ax
 
 	pop	ax
@@ -131,7 +129,7 @@ write	proc	near
 	;write picture
 	mov	ah,	40h
 	mov	cx,	RSIZE
-	lea	dx,	mbb
+	lea	dx,	pic
 	int	21h
 	;close file
 	mov	ah,	3eh
@@ -140,57 +138,13 @@ write	proc	near
 	mov	ah,	09h
 	lea	dx,	msg_write_end
 	int	21h
+
 	pop	dx
 	pop	cx
 	pop	bx
 	pop	ax
 	ret
 write	endp
-
-; lbuff	proc	near;start at ax
-; 	push	ax
-; 	push	bx
-; 	push	cx
-; 	push	dx
-
-; 	push	di
-; 	push	si
-
-; 	lea	di,	ir
-; 	mov	si,	ax
-
-; 	cld
-
-; 	mov	dl,	3;color counter
-
-; 	buff:	mov	bx,	y;row counter
-; 		buff10:
-; 			mov	cx,	x
-; 			rep	movsw;copy one row
-
-; 			add	si,	px;next row in input
-; 			sub	si,	x
-
-; 			dec	bx
-; 			cmp	bx,	0
-; 			jne	buff10
-
-; 		add	ax,	ISIZE
-; 		mov	si,	ax
-
-; 		dec	dl
-; 		cmp	dl,	0
-; 		jne	buff
-
-; 	pop	si
-; 	pop	di
-
-; 	pop	dx
-; 	pop	cx
-; 	pop	bx
-; 	pop	ax
-; 	ret
-; lbuff	endp
 
 ;this loads the picture
 load	proc	near
@@ -213,11 +167,12 @@ load	proc	near
 
 
 
-	lea	dx,	mbb
+
 	; FIXME HANDLE OPENNING ERRORS
 	;store file handle for later usage
 	mov	bx,	ax
 	;skipe the header
+	lea	dx,	mbb
 	mov	cx,	16;8 farbfeld,4width,4height
 	mov	ah,	3fh
 	int	21h
@@ -229,50 +184,23 @@ load	proc	near
 	;read
 	mov	ah,	3fh
 	mov	cx,	RSIZE
-	lea	dx,	mbb
+	lea	dx,	pic
 	int	21h
 
 	mov	ah,	09h
 	lea	dx,	msg_load_read_start
 	int	21h
 
-	lea	si,	mbb
-	lea	di,	pr
-	mov	cx,	ISIZE
-	mov	bx,	10
-	mov	ax,	0
-
-	bread:
-		movsw;r
-		add	di,	NSIZE
-		movsw;g
-		add	di,	NSIZE
-		movsw;b
-		add	si,	2;skipp alpha
-		sub	di,	DSIZE
-		sub	di,	DSIZE
-
-		inc	ax
-		cmp	ax,	100
-		jne	nopr
-			mov	ax,	cx
-			call print
-			mov	ax,	0
-	nopr:	loop	bread
-	;close file
 
 	mov	ah,	09h
-	lea	dx,	msg_load_read_start
+	lea	dx,	msg_load_read
 	int	21h
-
+	;close
 	mov	bx,	HANDLE
 	mov	ah,	3eh
 	int	21h
 	lea	dx,	mbb
 
-	mov	ah,	09h
-	lea	dx,	fread
-	int	21h
 
 	pop	si
 	pop	di
