@@ -41,8 +41,8 @@ __data	segment	'data'
 	;	10,	13,	'$'
 
 	obuf	db	100	dup('$')
-	pic	db	IFSIZE	dup(?)
-	cip	db	IFSIZE	dup(?)
+	pic	dw	IFSIZE	dup(?)
+	cip	dw	IFSIZE	dup(?)
 	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
 		db	100 dup('$')
 
@@ -159,14 +159,15 @@ load	proc	near
 	mov	al,	0;read
 	mov	ah,	3dh;
 	int	21h
-
+	mov	handle,	ax
+	mov	bx,	ax
 	mov	ah,	09h
 	lea	dx,	msg_load_head
 	int	21h
 
 	; FIXME HANDLE OPENNING ERRORS
 	;store file handle for later usage
-	mov	bx,	ax
+	
 	;skipe the header
 	lea	dx,	pic
 	mov	cx,	16;8 farbfeld,4width,4height
