@@ -16,9 +16,6 @@ __data	segment	'data'
 	pg	dw	ISIZE	dup(0)
 	pb	dw	ISIZE	dup(0)
 
-
-
-
 	r	dw	?
 	g	dw	?
 	b	dw	?
@@ -35,7 +32,17 @@ __data	segment	'data'
 		db	0,0,0,ILEN,0,0,0,ILEN
 	fname	db	"C:\small_lenna.ff", 0
 	aname	db	"C:\test.ff",	0
+
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
+	msg_load_start	db	"starting reading",	10,	13,	'$'
+	msg_load_end	db	"finished reading",	10,	13,	'$'
+	msg_load_head	db	"skipped the header",	10,	13,	'$'
+	msg_load_read_start	db	"starting reading",	10,	13,	'$'
+	msg_load_read	db	"finihsed loading into the buffer",10,	13,	'$'
+	msg_load_open	db	"openned the file",	10,	13,	'$'
+	msg_write_start	db	"starting writing",  10,	13,	'$'
+	msg_write_end	db	"finished writing",  10,	13,	'$'
+	;	10,	13,	'$'
 	;my big buffer
 	mbb	db	IFSIZE	dup(?)
 	obuf	db	100	dup('$')
@@ -58,10 +65,14 @@ start:
 	mov	ds,	ax
 	mov	es,	ax;for movs
 
+	mov	ah,	09h
+	lea	dx,	msg_load_start
+	int	21h
 
 	call load
+
 	mov	ah,	09h
-	lea	dx,	fread
+	lea	dx,	msg_load_end
 	int	21h
 
 
@@ -72,9 +83,10 @@ start:
 	ml10:	call	fuck
 		add	di,	8
 		add	si,	2
-
 		loop	ml10
+
 	call write
+
 	;retur dos 2 style
 	mov	ax,	4c00h
 	int	21h
@@ -100,6 +112,11 @@ write	proc	near
 	push	bx
 	push	cx
 	push	dx
+
+	mov	ah,	09h
+	lea	dx,	msg_write_start
+	int	21h
+
 	;create a new file
 	mov	ah,	3ch
 	mov	cx,	0
@@ -118,6 +135,10 @@ write	proc	near
 	int	21h
 	;close file
 	mov	ah,	3eh
+	int	21h
+
+	mov	ah,	09h
+	lea	dx,	msg_write_end
 	int	21h
 	pop	dx
 	pop	cx
@@ -185,6 +206,13 @@ load	proc	near
 	mov	al,	0;read
 	mov	ah,	3dh;
 	int	21h
+
+	mov	ah,	09h
+	lea	dx,	msg_load_head
+	int	21h
+
+
+
 	lea	dx,	mbb
 	; FIXME HANDLE OPENNING ERRORS
 	;store file handle for later usage
@@ -194,7 +222,10 @@ load	proc	near
 	mov	ah,	3fh
 	int	21h
 
-	lea	dx,	mbb
+	mov	ah,	09h
+	lea	dx,	msg_load_head
+	int	21h
+
 	;read
 	mov	ah,	3fh
 	mov	cx,	RSIZE
@@ -202,14 +233,16 @@ load	proc	near
 	int	21h
 
 	mov	ah,	09h
-	lea	dx,	fread
+	lea	dx,	msg_load_read_start
 	int	21h
+
 	lea	si,	mbb
 	lea	di,	pr
 	mov	cx,	ISIZE
 	mov	bx,	10
 	mov	ax,	0
-	bread:	
+
+	bread:
 		movsw;r
 		add	di,	NSIZE
 		movsw;g
@@ -227,6 +260,11 @@ load	proc	near
 			mov	ax,	0
 	nopr:	loop	bread
 	;close file
+
+	mov	ah,	09h
+	lea	dx,	msg_load_read_start
+	int	21h
+
 	mov	bx,	HANDLE
 	mov	ah,	3eh
 	int	21h
