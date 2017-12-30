@@ -26,8 +26,8 @@ __data	segment	'data'
 	handle	dw	?
 	head	db	"farbfeld"
 		db	0,0,0,ILEN,0,0,0,ILEN
-	fname	db	"C:\small_lenna.ff", 0
-	aname	db	"C:\test.ff",	0
+	fname	db	"C:\SMALL_LENA.FF", 0
+	aname	db	"C:\TEST.FF",	0
 
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	msg_load_start	db	"starting reading",	10,	13,	'$'
@@ -119,8 +119,10 @@ write	proc	near
 	lea	dx,	aname
 	int	21h
 	;write header
+	mov	handle,	ax
 	mov	bx,	ax;handle
 	;
+
 	mov	cx,	16
 	lea	dx,	head
 	mov	ah,	40h
@@ -161,24 +163,17 @@ load	proc	near
 	int	21h
 	mov	handle,	ax
 	mov	bx,	ax
-	mov	ah,	09h
-	lea	dx,	msg_load_head
-	int	21h
-
 	; FIXME HANDLE OPENNING ERRORS
 	;store file handle for later usage
-	
-	;skipe the header
+	;skip the header
+	mov	bx,	handle
 	lea	dx,	pic
 	mov	cx,	16;8 farbfeld,4width,4height
 	mov	ah,	3fh
 	int	21h
-
-	mov	ah,	09h
-	lea	dx,	msg_load_head
-	int	21h
-
+	call	print
 	;read
+	mov	bx,	handle
 	mov	ah,	3fh
 	mov	cx,	RSIZE
 	lea	dx,	pic
@@ -193,7 +188,7 @@ load	proc	near
 	lea	dx,	msg_load_read
 	int	21h
 	;close
-	mov	bx,	HANDLE
+	mov	bx,	handle
 	mov	ah,	3eh
 	int	21h
 
