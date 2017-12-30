@@ -26,7 +26,7 @@ __data	segment	'data'
 	handle	dw	?
 	head	db	"farbfeld"
 		db	0,0,0,ILEN,0,0,0,ILEN
-	fname	db	"C:\SMALL_LENA.FF", 0
+	fname	db	"C:\SMALL_LENNA.FF", 0
 	aname	db	"C:\TEST.FF",	0
 
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
@@ -161,6 +161,7 @@ load	proc	near
 	mov	al,	0;read
 	mov	ah,	3dh;
 	int	21h
+	call print
 	mov	handle,	ax
 	mov	bx,	ax
 	; FIXME HANDLE OPENNING ERRORS
