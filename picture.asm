@@ -1,6 +1,9 @@
 ILEN	EQU	10
 ISIZE	EQU	100
+DSIZE	EQU	200
+NSIZE	EQU	198
 IFSIZE	EQU	400
+RSIZE	EQU	800
 OLEN	EQU	7
 OSIZE	EQU	49
 __data	segment	'data'
@@ -15,9 +18,6 @@ __data	segment	'data'
 
 
 
-	ir	dw	OSIZE	dup(1)
-	ig	dw	OSIZE	dup(1)
-	ib	dw	OSIZE	dup(1)
 
 	r	dw	?
 	g	dw	?
@@ -65,13 +65,14 @@ start:
 	int	21h
 
 
-	lea	ax,	ir
+
 	mov	cx,	count
 	lea	di,	mbb
-	ml10:	call	lbuff
-		call	fuck
+	lea	si,	pr
+	ml10:	call	fuck
 		add	di,	8
-		inc	ax
+		add	si,	2
+
 		loop	ml10
 	call write
 	;retur dos 2 style
@@ -81,13 +82,12 @@ main	endp
 
 fuck	proc	near
 	push	ax
-	mov	ax,	ir
+	mov	ax,	[si + 0]
 	mov	[di + 0],	ax
-	mov	ax,	ig
+	mov	ax,	[si + DSIZE]
 	mov	[di + 2],	ax
-	mov	ax,	ib
+	mov	ax,	[si + DSIZE + DSIZE]
 	mov	[di + 4],	ax
-
 	mov	ax,	-1
 	mov	[di + 6],	ax
 
@@ -113,7 +113,7 @@ write	proc	near
 	int	21h
 	;write picture
 	mov	ah,	40h
-	mov	cx,	IFSIZE
+	mov	cx,	RSIZE
 	lea	dx,	mbb
 	int	21h
 	;close file
@@ -126,50 +126,50 @@ write	proc	near
 	ret
 write	endp
 
-lbuff	proc	near;start at ax
-	push	ax
-	push	bx
-	push	cx
-	push	dx
+; lbuff	proc	near;start at ax
+; 	push	ax
+; 	push	bx
+; 	push	cx
+; 	push	dx
 
-	push	di
-	push	si
+; 	push	di
+; 	push	si
 
-	lea	di,	ir
-	mov	si,	ax
+; 	lea	di,	ir
+; 	mov	si,	ax
 
-	cld
+; 	cld
 
-	mov	dl,	3;color counter
+; 	mov	dl,	3;color counter
 
-	buff:	mov	bx,	y;row counter
-		buff10:
-			mov	cx,	x
-			rep	movsw;copy one row
+; 	buff:	mov	bx,	y;row counter
+; 		buff10:
+; 			mov	cx,	x
+; 			rep	movsw;copy one row
 
-			add	si,	px;next row in input
-			sub	si,	x
+; 			add	si,	px;next row in input
+; 			sub	si,	x
 
-			dec	bx
-			cmp	bx,	0
-			jne	buff10
+; 			dec	bx
+; 			cmp	bx,	0
+; 			jne	buff10
 
-		add	ax,	ISIZE
-		mov	si,	ax
+; 		add	ax,	ISIZE
+; 		mov	si,	ax
 
-		dec	dl
-		cmp	dl,	0
-		jne	buff
+; 		dec	dl
+; 		cmp	dl,	0
+; 		jne	buff
 
-	pop	si
-	pop	di
+; 	pop	si
+; 	pop	di
 
-	pop	dx
-	pop	cx
-	pop	bx
-	pop	ax
-	ret
-lbuff	endp
+; 	pop	dx
+; 	pop	cx
+; 	pop	bx
+; 	pop	ax
+; 	ret
+; lbuff	endp
 
 ;this loads the picture
 load	proc	near
@@ -197,33 +197,33 @@ load	proc	near
 	lea	dx,	mbb
 	;read
 	mov	ah,	3fh
-	mov	cx,	IFSIZE
+	mov	cx,	RSIZE
 	lea	dx,	mbb
 	int	21h
 
 	mov	ah,	09h
 	lea	dx,	fread
 	int	21h
-
+	lea	si,	mbb
 	lea	di,	pr
 	mov	cx,	ISIZE
 	mov	bx,	10
 	mov	ax,	0
-	bread:	movsw;r
-		add	di,	ISIZE
+	bread:	
+		movsw;r
+		add	di,	NSIZE
 		movsw;g
-		add	di,	ISIZE
+		add	di,	NSIZE
 		movsw;b
 		add	si,	2;skipp alpha
-		sub	di,	ISIZE
-		sub	di,	ISIZE
+		sub	di,	DSIZE
+		sub	di,	DSIZE
 
 		inc	ax
 		cmp	ax,	100
 		jne	nopr
 			mov	ax,	cx
 			call print
-
 			mov	ax,	0
 	nopr:	loop	bread
 	;close file
