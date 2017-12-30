@@ -72,8 +72,6 @@ start:
 	lea	dx,	msg_load_end
 	int	21h
 
-
-
 	mov	cx,	count
 	lea	di,	cip
 	lea	si,	pic
@@ -122,6 +120,7 @@ write	proc	near
 	int	21h
 	;write header
 	mov	bx,	ax;handle
+	;
 	mov	cx,	16
 	lea	dx,	head
 	mov	ah,	40h
@@ -165,14 +164,11 @@ load	proc	near
 	lea	dx,	msg_load_head
 	int	21h
 
-
-
-
 	; FIXME HANDLE OPENNING ERRORS
 	;store file handle for later usage
 	mov	bx,	ax
 	;skipe the header
-	lea	dx,	mbb
+	lea	dx,	pic
 	mov	cx,	16;8 farbfeld,4width,4height
 	mov	ah,	3fh
 	int	21h
@@ -199,7 +195,6 @@ load	proc	near
 	mov	bx,	HANDLE
 	mov	ah,	3eh
 	int	21h
-	lea	dx,	mbb
 
 
 	pop	si
