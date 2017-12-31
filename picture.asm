@@ -1,9 +1,9 @@
-ILEN	EQU	64
-ISIZE	EQU	4096
-DSIZE	EQU	8192
-NSIZE	EQU	8190
-IFSIZE	EQU	16384
-RSIZE	EQU	32768
+ILEN	EQU	10
+ISIZE	EQU	100
+DSIZE	EQU	200
+NSIZE	EQU	198
+IFSIZE	EQU	400
+RSIZE	EQU	800
 OLEN	EQU	7
 OSIZE	EQU	49
 __data	segment	'data'
@@ -12,7 +12,9 @@ __data	segment	'data'
 
 	counter dw 0
 	count	dw	ISIZE
-
+	r	dw	?
+	g	dw	?
+	b	dw	?
 
 	len	dw	OSIZE
 	x	dw	OLEN
@@ -44,6 +46,7 @@ __data	segment	'data'
 	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
 	;	10,	13,	'$'
 
+	obuf	db	100	dup('$')
 	pic	dw	IFSIZE	dup(2)
 	cip	dw	IFSIZE	dup(10)
 	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
