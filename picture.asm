@@ -1,31 +1,15 @@
-ILEN	EQU	10
-ISIZE	EQU	100
-DSIZE	EQU	200
-NSIZE	EQU	198
-IFSIZE	EQU	400
-RSIZE	EQU	800
-OLEN	EQU	7
-OSIZE	EQU	49
+len	EQU	90
+area	EQU	8100
+IFSIZE	EQU	64800
+wx	EQU	7
+wy	EQU	7
+wa	EQU	39
 __data	segment	'data'
-;let's go with grey scale
-;let's assume our filters use a 7 * 7 window
-
-	counter dw 0
-	count	dw	ISIZE
-	r	dw	?
-	g	dw	?
-	b	dw	?
-
-	len	dw	OSIZE
-	x	dw	OLEN
-	y	dw	OLEN
-
-	px	dw	ILEN
-	py	dw	ILEN
+	
 ;file stuff
 	handle	dw	?
 	head	db	"farbfeld"
-		db	0,0,0,ILEN,0,0,0,ILEN
+		db	0,0,0,0,0,0,0,0
 	ifname	db	"C:\SL.FF", 0
 	ofname	db	"C:\TEST.FF",	0
 
@@ -47,12 +31,12 @@ __data	segment	'data'
 	;	10,	13,	'$'
 
 	obuf	db	100	dup('$')
-	pic	dw	IFSIZE	dup(2)
-	cip	dw	IFSIZE	dup(10)
-	buffer db	32,	?,	32	dup(0), 	 10,	13,	'$'
-		db	100 dup('$')
-
+	pic	db	IFSIZE	dup(2)
 __data	ends
+
+_output	segment	'data'
+	cip	db	IFSIZE	dup(3)
+_output	ends
 
 _stack	segment	stack	'stack'
 	dw	32000	dup('$')
@@ -60,25 +44,22 @@ _stack	ends
 
 __code	segment	'code'
 
-	assume	cs:__code,	ds:__data,	ss:_stack
+	assume	cs:__code,	ds:__data,	ss:_stack,	es:_output
 main	proc
 
 start:
 	mov	ax,	__data
 	mov	ds,	ax
-	mov	es,	ax;for movs
+	mov	ax,	_output
+	mov	es,	ax
 
-	; mov	ah,	09h
-	; lea	dx,	msg_load_start
-	; int	21h
-	; call print
 	call load
 
 	mov	ah,	09h
 	lea	dx,	msg_load_end
 	int	21h
 
-	mov	cx,	count
+	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
 	ml10:	call	fuck
@@ -109,6 +90,94 @@ fuck	proc	near
 	ret
 fuck	endp
 
+min	proc	near
+	mov	bp,	sp
+	push	0FFFFh
+	push	0FFFFh
+	push	0FFFFh
+	push	0FFFFh
+	mov	cx,	wy
+	mov	bx,	0
+	min10:	push	cx
+			mov	cx,	wx
+		min20:		
+				mov	ax,	[si + bx]
+				cmp	ax,	[bp]
+				jg	s10	
+				mov	[si + bx],	ax
+		s10:		mov	ax,	[si + bx + 2]
+				cmp	ax,	[bp]
+				jg	s20	
+				mov	[si + bx + 2],	ax
+		s20:		mov	ax,	[si + bx + 4]
+				cmp	ax,	[bp]
+				jg	s30	
+				mov	[si + bx + 4],	ax
+		s30:		
+				add	bx,	6
+				loop	min20
+			add	bx,	len
+			sub	bx,	cx
+		pop	cx
+		loop	min10
+
+	mov	ax,	[bp]
+	mov	es:[di],	ax
+	mov	ax,	[bp + 2]
+	mov	es:[di],	ax
+	mov	ax,	[bp + 4]
+	mov	es:[di],	ax
+	mov	ax,	[bp + 6]
+	mov	es:[di],	ax
+	
+	sub	sp,	8
+	ret
+min	endp
+
+max	proc	near
+	mov	bp,	sp
+	push	0
+	push	0
+	push	0
+	push	0FFFFh
+	mov	cx,	wy
+	mov	bx,	0
+	min10:	push	cx
+			mov	cx,	wx
+		min20:		
+				mov	ax,	[si + bx]
+				cmp	ax,	[bp]
+				jl	s10	
+				mov	[si + bx],	ax
+		s10:		mov	ax,	[si + bx + 2]
+				cmp	ax,	[bp]
+				jl	s20	
+				mov	[si + bx + 2],	ax
+		s20:		mov	ax,	[si + bx + 4]
+				cmp	ax,	[bp]
+				jl	s30	
+				mov	[si + bx + 4],	ax
+		s30:		
+				add	bx,	6
+				loop	min20
+			add	bx,	len
+			sub	bx,	cx
+		pop	cx
+		loop	min10
+
+	mov	ax,	[bp]
+	mov	es:[di],	ax
+	mov	ax,	[bp + 2]
+	mov	es:[di],	ax
+	mov	ax,	[bp + 4]
+	mov	es:[di],	ax
+	mov	ax,	[bp + 6]
+	mov	es:[di],	ax
+	
+	sub	sp,	8
+	ret
+max	endp
+
 write	proc	near
 	push	ax
 	push	bx
@@ -135,7 +204,7 @@ write	proc	near
 	jb	wer20
 	;write picture
 	mov	ah,	40h
-	mov	cx,	RSIZE
+	mov	cx,	IFSIZE
 	lea	dx,	pic
 	int	21h
 	jb	wer30
@@ -188,7 +257,7 @@ load	proc	near
 	mov	handle,	ax
 	mov	bx,	ax
 	;skip the header
-	lea	dx,	pic
+	lea	dx,	head
 	mov	cx,	16;8 farbfeld,4width,4height
 	mov	ah,	3fh
 	int	21h
@@ -197,7 +266,7 @@ load	proc	near
 	;read
 	mov	bx,	handle
 	mov	ah,	3fh
-	mov	cx,	RSIZE
+	mov	cx,	IFSIZE
 	lea	dx,	pic
 	int	21h
 	jb	lerr2
