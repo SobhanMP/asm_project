@@ -1,6 +1,9 @@
-len	EQU	90
-area	EQU	8100
-IFSIZE	EQU	8100
+;convert -depth 8 -resize 200x200 lenna.png gray:input
+;convert -depth 8 -size 200x200 gray:input output.png
+
+len	EQU	200
+area	EQU	40000
+IFSIZE	EQU	40000
 wx	EQU	7
 wy	EQU	7
 wa	EQU	39
@@ -11,8 +14,11 @@ __data	segment	'data'
 	handle	dw	?
 	head	db	"farbfeld"
 		db	0,0,0,0,0,0,0,0
-	ifname	db	"C:\SL.FF", 0
-	ofname	db	"C:\TEST.FF",	0
+	ifname	db	"C:\I", 0
+	ofname	db	"C:\O"
+	ofcoun	dw	0
+		db	0
+
 	window	db	wa
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	msg_load_start	db	"starting reading",	10,	13,	'$'
@@ -65,7 +71,7 @@ start:
 	lea	si,	pic
 	ml10:	call	pwin
 		call	min
-		mov	es:[di],	ax
+		mov	es:[di],	al
 		inc	di
 		inc	si
 		loop	ml10
@@ -77,6 +83,12 @@ fin:	mov	ax,	4c00h
 	int	21h
 main	endp
 
+iden	proc	near
+	mov	al,	window
+	ret
+iden	proc	endp
+
+;populate window
 pwin	proc	near
 	mov	bx,	0
 	mov	cx,	wy
@@ -84,13 +96,14 @@ pwin	proc	near
 	win10:	push	cx
 			mov	cx,	wx
 		win20:
-				mov	ax,	[si + bx]
-				mov	window[bx],	ax
+				mov	al,	[si + bx]
+				mov	window[bx],	al
 				inc	bx
 				loop	win20
+		add	bx,	len
+		sub	bx,	wx
 		pop	cx
 		loop	win10
-
 	ret
 pwin	endp
 
@@ -174,8 +187,6 @@ median	proc	near
 	ret
 median	endp
 
-	ret
-median	endp
 max	proc	near
 	mov	bp,	sp
 	push	0
@@ -236,14 +247,8 @@ write	proc	near
 	lea	dx,	ofname
 	int	21h
 	jb	wer10
-	;write header
 	mov	handle,	ax
 	mov	bx,	ax;handle
-	mov	cx,	16
-	lea	dx,	head
-	mov	ah,	40h
-	int	21h
-	jb	wer20
 	;write picture
 	mov	ah,	40h
 	mov	cx,	IFSIZE
@@ -298,24 +303,11 @@ load	proc	near
 	; call print
 	mov	handle,	ax
 	mov	bx,	ax
-	;skip the header
-	lea	dx,	head
-	mov	cx,	16;8 farbfeld,4width,4height
-	mov	ah,	3fh
-	int	21h
-	jb	lerr1
-	; call	print
-	;read
-	mov	bx,	handle
 	mov	ah,	3fh
 	mov	cx,	IFSIZE
 	lea	dx,	pic
 	int	21h
 	jb	lerr2
-	mov	ah,	09h
-	lea	dx,	msg_load_read_start
-	int	21h
-
 
 	mov	ah,	09h
 	lea	dx,	msg_load_read
