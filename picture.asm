@@ -67,11 +67,14 @@ start:
 	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
-	ml10:	call	pwin
-		call	min
+	ml10:
+		push	cx
+		call	pwin
+		call	iden
 		mov	es:[di],	al
 		inc	di
 		inc	si
+		pop	cx
 		loop	ml10
 
 	call write
