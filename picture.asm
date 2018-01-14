@@ -18,6 +18,7 @@ __data	segment
 		db	0
 
 	window	db	wa	dup(0)
+
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	msg_load_start	db	"starting reading",	10,	13,	'$'
 	msg_load_end	db	"finished reading",	10,	13,	'$'
@@ -26,7 +27,7 @@ __data	segment
 	msg_load_read	db	"finihsed loading into the buffer",10,	13,	'$'
 	msg_load_open	db	"openned the file",	10,	13,	'$'
 	msg_write_start	db	"starting writing",  10,	13,	'$'
-	msg_write_end	db	"finished wr00iting",  10,	13,	'$'
+	msg_write_end	db	"finished writing",  10,	13,	'$'
 	msg_error_load_open	db "could not open file",	10,	13,	'$'
 	msg_error_load_read	db "could not read header of file",	10,	13,	'$'
 	msg_error_write_create	db	"could not create file",	10,	13,	'$'
@@ -35,10 +36,11 @@ __data	segment
 	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
 	;	10,	13,	'$'
 	fcount	dw	3
-	func	dw	iden,	mean,	median
+	func	dw	median,	iden,	mean
 
-	buffer	db	100	dup('$')
+
 	pic	db	IFSIZE	dup(0)
+	buffer	db	100	dup('$')
 __data	ends
 
 _output	segment
@@ -310,7 +312,7 @@ load	proc	near
 	mov	ah,	3dh;
 	int	21h
 	jb	lerr0
-	; call print
+
 	mov	handle,	ax
 	mov	bx,	ax
 	mov	ah,	3fh
