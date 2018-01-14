@@ -1,18 +1,19 @@
 len	EQU	90
 area	EQU	8100
-IFSIZE	EQU	64800
+IFSIZE	EQU	8100
 wx	EQU	7
 wy	EQU	7
 wa	EQU	39
+wm	EQU 	24
 __data	segment	'data'
-	
+
 ;file stuff
 	handle	dw	?
 	head	db	"farbfeld"
 		db	0,0,0,0,0,0,0,0
 	ifname	db	"C:\SL.FF", 0
 	ofname	db	"C:\TEST.FF",	0
-
+	window	db	wa
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	msg_load_start	db	"starting reading",	10,	13,	'$'
 	msg_load_end	db	"finished reading",	10,	13,	'$'
@@ -62,9 +63,11 @@ start:
 	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
-	ml10:	call	fuck
-		add	di,	8
-		add	si,	8
+	ml10:	call	pwin
+		call	min
+		mov	es:[di],	ax
+		inc	di
+		inc	si
 		loop	ml10
 
 	call write
@@ -74,66 +77,105 @@ fin:	mov	ax,	4c00h
 	int	21h
 main	endp
 
-fuck	proc	near
-	push	ax
+pwin	proc	near
+	mov	bx,	0
+	mov	cx,	wy
 
-	mov	ax,	[si + 0]
-	mov	[di + 0],	ax
-	mov	ax,	[si + 2]
-	mov	[di + 2],	ax
-	mov	ax,	[si + 4]
-	mov	[di + 4],	ax
-	mov	ax,	[si + 6]
-	mov	[di + 6],	ax
+	win10:	push	cx
+			mov	cx,	wx
+		win20:
+				mov	ax,	[si + bx]
+				mov	window[bx],	ax
+				inc	bx
+				loop	win20
+		pop	cx
+		loop	win10
 
-	pop	ax
 	ret
-fuck	endp
+pwin	endp
+
+sum	proc	near
+	push	bx
+	push	cx
+	push	dx
+
+	mov	bx,	0
+	mov	ax,	0
+	mov	dx,	0
+
+	sum10:	mov	dl,	window[bx]
+		add	ax,	dx
+		inc	bx
+		cmp	bx,	wa
+		jne	sum10
+
+	pop	dx
+	pop	cx
+	pop	bx
+
+	ret
+sum	endp
 
 min	proc	near
-	mov	bp,	sp
-	push	0FFFFh
-	push	0FFFFh
-	push	0FFFFh
-	push	0FFFFh
-	mov	cx,	wy
+	mov	al,	-1
 	mov	bx,	0
-	min10:	push	cx
-			mov	cx,	wx
-		min20:		
-				mov	ax,	[si + bx]
-				cmp	ax,	[bp]
-				jg	s10	
-				mov	[si + bx],	ax
-		s10:		mov	ax,	[si + bx + 2]
-				cmp	ax,	[bp]
-				jg	s20	
-				mov	[si + bx + 2],	ax
-		s20:		mov	ax,	[si + bx + 4]
-				cmp	ax,	[bp]
-				jg	s30	
-				mov	[si + bx + 4],	ax
-		s30:		
-				add	bx,	6
-				loop	min20
-			add	bx,	len
-			sub	bx,	cx
-		pop	cx
-		loop	min10
-
-	mov	ax,	[bp]
-	mov	es:[di],	ax
-	mov	ax,	[bp + 2]
-	mov	es:[di],	ax
-	mov	ax,	[bp + 4]
-	mov	es:[di],	ax
-	mov	ax,	[bp + 6]
-	mov	es:[di],	ax
-	
-	sub	sp,	8
+	min10:
+		cmp	bx,	wm
+		je	mins
+		cmp	al,	window[bx]
+		jle	mins
+		mov	al,	window[bx]
+	mins:	inc	bx
+		cmp	bx,	wa
+		jne	min10
 	ret
 min	endp
 
+mean	proc	near
+	call	sum
+	mov	bl,	wa
+	div	bl
+	ret
+mean	endp
+
+wsort	proc	near
+	push	di
+	push	si
+
+	mov	di,	0
+	mov	si,	0
+	mov	bx,	0
+	xor	ah,	ah
+	mov	al,	window
+	ws5:
+		mov	si,	di
+		ws10:	cmp	al,	window[si]
+			jle	wss
+			mov	al,	window[si]
+			mov	bx,	si
+		wss:	inc	si
+			cmp	si,	wa
+			jne	ws10
+		mov	window[bx],	window[di]
+		mov	window[di],	al
+		inc	di
+		cmp	di,	wa
+		jne	ws5
+
+	pop	si
+	pop	di
+
+	ret
+wsort	endp
+
+median	proc	near
+	call	wsort
+	mov	al,	window[wm]
+	ret
+median	endp
+
+	ret
+median	endp
 max	proc	near
 	mov	bp,	sp
 	push	0
@@ -144,20 +186,20 @@ max	proc	near
 	mov	bx,	0
 	min10:	push	cx
 			mov	cx,	wx
-		min20:		
+		min20:
 				mov	ax,	[si + bx]
 				cmp	ax,	[bp]
-				jl	s10	
+				jl	s10
 				mov	[si + bx],	ax
 		s10:		mov	ax,	[si + bx + 2]
 				cmp	ax,	[bp]
-				jl	s20	
+				jl	s20
 				mov	[si + bx + 2],	ax
 		s20:		mov	ax,	[si + bx + 4]
 				cmp	ax,	[bp]
-				jl	s30	
+				jl	s30
 				mov	[si + bx + 4],	ax
-		s30:		
+		s30:
 				add	bx,	6
 				loop	min20
 			add	bx,	len
@@ -173,7 +215,7 @@ max	proc	near
 	mov	es:[di],	ax
 	mov	ax,	[bp + 6]
 	mov	es:[di],	ax
-	
+
 	sub	sp,	8
 	ret
 max	endp
