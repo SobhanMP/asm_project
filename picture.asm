@@ -1,20 +1,20 @@
 ;convert -depth 8 -resize 200x200 lenna.png gray:input
 ;convert -depth 8 -size 200x200 gray:input output.png
 
-len	EQU	10
-area	EQU	100
-IFSIZE	EQU	100
+len	EQU	200
+area	EQU	40000
+IFSIZE	EQU	40000
 wx	EQU	3
 wy	EQU	3
 wa	EQU	9
 wm	EQU 	4
-__data	segment	'data'
+__data	segment
 
 ;file stuff
 	handle	dw	?
 	ifname	db	"C:\I", 0
 	ofname	db	"C:\O"
-	ofc	db	"0"
+	ofc	db	"1"
 		db	0
 
 	window	db	wa	dup(0)
@@ -26,7 +26,7 @@ __data	segment	'data'
 	msg_load_read	db	"finihsed loading into the buffer",10,	13,	'$'
 	msg_load_open	db	"openned the file",	10,	13,	'$'
 	msg_write_start	db	"starting writing",  10,	13,	'$'
-	msg_write_end	db	"finished writing",  10,	13,	'$'
+	msg_write_end	db	"finished wr00iting",  10,	13,	'$'
 	msg_error_load_open	db "could not open file",	10,	13,	'$'
 	msg_error_load_read	db "could not read header of file",	10,	13,	'$'
 	msg_error_write_create	db	"could not create file",	10,	13,	'$'
@@ -38,10 +38,10 @@ __data	segment	'data'
 	func	dw	mean,	median
 
 	buffer	db	100	dup('$')
-	pic	db	IFSIZE	dup(2)
+	pic	db	IFSIZE	dup(0)
 __data	ends
 
-_output	segment	'data'
+_output	segment
 	cip	db	IFSIZE	dup(3)
 _output	ends
 
@@ -68,12 +68,11 @@ start:
 
 	mov	bx,	0
 	mov	cx,	fcount
-
 	ml5:
+		mov	fcount,	cx
 		mov	dx,	func[bx]
 		add	bx,	2
 		push	bx
-		push	cx
 		push	dx
 
 		mov	cx,	area
@@ -95,12 +94,13 @@ start:
 		inc	al
 		mov	ofc,	al
 
-	pop	dx
-	pop	cx
-	pop	bx
-	mov	ax,	cx
-	call	print
-	loop	ml5
+		pop	dx
+		pop	bx
+
+		mov	cx,	fcount
+		mov	ax,	cx
+		call	print
+		loop	ml5
 
 
 	;retur dos 2 style
@@ -237,6 +237,8 @@ write	proc	near
 	push	cx
 	push	dx
 
+
+
 	mov	ah,	09h
 	lea	dx,	msg_write_start
 	int	21h
@@ -249,11 +251,18 @@ write	proc	near
 	jb	wer10
 	mov	handle,	ax
 	mov	bx,	ax;handle
+
+	mov	ax,	_output
+	mov	ds,	ax
 	;write picture
 	mov	ah,	40h
 	mov	cx,	IFSIZE
-	lea	dx,	pic
+	lea	dx,	cip
 	int	21h
+
+	mov	ax,	__data
+	mov	ds,	ax
+
 	jb	wer30
 	;close file
 	mov	ah,	3eh
@@ -262,6 +271,7 @@ write	proc	near
 	mov	ah,	09h
 	lea	dx,	msg_write_end
 	int	21h
+
 
 	pop	dx
 	pop	cx
