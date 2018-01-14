@@ -12,8 +12,6 @@ __data	segment	'data'
 
 ;file stuff
 	handle	dw	?
-	head	db	"farbfeld"
-		db	0,0,0,0,0,0,0,0
 	ifname	db	"C:\I", 0
 	ofname	db	"C:\O"
 	ofcoun	dw	0
@@ -37,7 +35,7 @@ __data	segment	'data'
 	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
 	;	10,	13,	'$'
 
-	obuf	db	100	dup('$')
+	buffer	db	100	dup('$')
 	pic	db	IFSIZE	dup(2)
 __data	ends
 
@@ -86,7 +84,7 @@ main	endp
 iden	proc	near
 	mov	al,	window
 	ret
-iden	proc	endp
+iden	endp
 
 ;populate window
 pwin	proc	near
@@ -169,7 +167,8 @@ wsort	proc	near
 		wss:	inc	si
 			cmp	si,	wa
 			jne	ws10
-		mov	window[bx],	window[di]
+		mov	dl,	window[di]
+		mov	window[bx],	dl
 		mov	window[di],	al
 		inc	di
 		cmp	di,	wa
@@ -187,49 +186,49 @@ median	proc	near
 	ret
 median	endp
 
-max	proc	near
-	mov	bp,	sp
-	push	0
-	push	0
-	push	0
-	push	0FFFFh
-	mov	cx,	wy
-	mov	bx,	0
-	min10:	push	cx
-			mov	cx,	wx
-		min20:
-				mov	ax,	[si + bx]
-				cmp	ax,	[bp]
-				jl	s10
-				mov	[si + bx],	ax
-		s10:		mov	ax,	[si + bx + 2]
-				cmp	ax,	[bp]
-				jl	s20
-				mov	[si + bx + 2],	ax
-		s20:		mov	ax,	[si + bx + 4]
-				cmp	ax,	[bp]
-				jl	s30
-				mov	[si + bx + 4],	ax
-		s30:
-				add	bx,	6
-				loop	min20
-			add	bx,	len
-			sub	bx,	cx
-		pop	cx
-		loop	min10
-
-	mov	ax,	[bp]
-	mov	es:[di],	ax
-	mov	ax,	[bp + 2]
-	mov	es:[di],	ax
-	mov	ax,	[bp + 4]
-	mov	es:[di],	ax
-	mov	ax,	[bp + 6]
-	mov	es:[di],	ax
-
-	sub	sp,	8
-	ret
-max	endp
+; max	proc	near
+; 	mov	bp,	sp
+; 	push	0
+; 	push	0
+; 	push	0
+; 	push	0FFFFh
+; 	mov	cx,	wy
+; 	mov	bx,	0
+; 	min10:	push	cx
+; 			mov	cx,	wx
+; 		min20:
+; 				mov	ax,	[si + bx]
+; 				cmp	ax,	[bp]
+; 				jl	s10
+; 				mov	[si + bx],	ax
+; 		s10:		mov	ax,	[si + bx + 2]
+; 				cmp	ax,	[bp]
+; 				jl	s20
+; 				mov	[si + bx + 2],	ax
+; 		s20:		mov	ax,	[si + bx + 4]
+; 				cmp	ax,	[bp]
+; 				jl	s30
+; 				mov	[si + bx + 4],	ax
+; 		s30:
+; 				add	bx,	6
+; 				loop	min20
+; 			add	bx,	len
+; 			sub	bx,	cx
+; 		pop	cx
+; 		loop	min10
+;
+; 	mov	ax,	[bp]
+; 	mov	es:[di],	ax
+; 	mov	ax,	[bp + 2]
+; 	mov	es:[di],	ax
+; 	mov	ax,	[bp + 4]
+; 	mov	es:[di],	ax
+; 	mov	ax,	[bp + 6]
+; 	mov	es:[di],	ax
+;
+; 	sub	sp,	8
+; 	ret
+; max	endp
 
 write	proc	near
 	push	ax
