@@ -1,23 +1,23 @@
 ;convert -depth 8 -resize 200x200 lenna.png gray:input
 ;convert -depth 8 -size 200x200 gray:input output.png
 
-len	EQU	200
-area	EQU	40000
-IFSIZE	EQU	40000
-wx	EQU	7
-wy	EQU	7
-wa	EQU	39
-wm	EQU 	24
+len	EQU	10
+area	EQU	100
+IFSIZE	EQU	100
+wx	EQU	3
+wy	EQU	3
+wa	EQU	9
+wm	EQU 	4
 __data	segment	'data'
 
 ;file stuff
 	handle	dw	?
 	ifname	db	"C:\I", 0
 	ofname	db	"C:\O"
-	ofcoun	dw	0
+	ofc	db	"0"
 		db	0
 
-	window	db	wa
+	window	db	wa	dup(0)
 	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
 	msg_load_start	db	"starting reading",	10,	13,	'$'
 	msg_load_end	db	"finished reading",	10,	13,	'$'
@@ -34,6 +34,8 @@ __data	segment	'data'
 	msg_error_write_image	db	"could not write image",	10,	13,	'$'
 	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
 	;	10,	13,	'$'
+	fcount	dw	2
+	func	dw	mean,	median
 
 	buffer	db	100	dup('$')
 	pic	db	IFSIZE	dup(2)
@@ -64,20 +66,42 @@ start:
 	lea	dx,	msg_load_end
 	int	21h
 
-	mov	cx,	area
-	lea	di,	cip
-	lea	si,	pic
-	ml10:
-		push	cx
-		call	pwin
-		call	iden
-		mov	es:[di],	al
-		inc	di
-		inc	si
-		pop	cx
-		loop	ml10
+	mov	bx,	0
+	mov	cx,	fcount
 
-	call write
+	ml5:
+		mov	dx,	func[bx]
+		add	bx,	2
+		push	bx
+		push	cx
+		push	dx
+
+		mov	cx,	area
+		lea	di,	cip
+		lea	si,	pic
+		ml10:
+			call	pwin
+			call	dx
+
+			mov	es:[di],	al
+			inc	di
+			inc	si
+
+			loop	ml10
+
+		call write
+		;change name
+		mov	al,	ofc
+		inc	al
+		mov	ofc,	al
+
+	pop	dx
+	pop	cx
+	pop	bx
+	mov	ax,	cx
+	call	print
+	loop	ml5
+
 
 	;retur dos 2 style
 fin:	mov	ax,	4c00h
@@ -91,6 +115,9 @@ iden	endp
 
 ;populate window
 pwin	proc	near
+	push	bx
+	push	cx
+
 	mov	bx,	0
 	mov	cx,	wy
 
@@ -105,6 +132,10 @@ pwin	proc	near
 		sub	bx,	wx
 		pop	cx
 		loop	win10
+
+	pop	cx
+	pop	bx
+
 	ret
 pwin	endp
 
@@ -131,6 +162,8 @@ sum	proc	near
 sum	endp
 
 min	proc	near
+	push	bx
+
 	mov	al,	-1
 	mov	bx,	0
 	min10:
@@ -142,13 +175,22 @@ min	proc	near
 	mins:	inc	bx
 		cmp	bx,	wa
 		jne	min10
+	pop	bx
 	ret
 min	endp
 
 mean	proc	near
+	push	bx
+	push	dx
+
 	call	sum
-	mov	bl,	wa
-	div	bl
+	xor	dx,	dx
+	mov	bx,	wa
+	div	bx
+
+	pop	dx
+	pop	bx
+
 	ret
 mean	endp
 
@@ -188,50 +230,6 @@ median	proc	near
 	mov	al,	window[wm]
 	ret
 median	endp
-
-; max	proc	near
-; 	mov	bp,	sp
-; 	push	0
-; 	push	0
-; 	push	0
-; 	push	0FFFFh
-; 	mov	cx,	wy
-; 	mov	bx,	0
-; 	min10:	push	cx
-; 			mov	cx,	wx
-; 		min20:
-; 				mov	ax,	[si + bx]
-; 				cmp	ax,	[bp]
-; 				jl	s10
-; 				mov	[si + bx],	ax
-; 		s10:		mov	ax,	[si + bx + 2]
-; 				cmp	ax,	[bp]
-; 				jl	s20
-; 				mov	[si + bx + 2],	ax
-; 		s20:		mov	ax,	[si + bx + 4]
-; 				cmp	ax,	[bp]
-; 				jl	s30
-; 				mov	[si + bx + 4],	ax
-; 		s30:
-; 				add	bx,	6
-; 				loop	min20
-; 			add	bx,	len
-; 			sub	bx,	cx
-; 		pop	cx
-; 		loop	min10
-;
-; 	mov	ax,	[bp]
-; 	mov	es:[di],	ax
-; 	mov	ax,	[bp + 2]
-; 	mov	es:[di],	ax
-; 	mov	ax,	[bp + 4]
-; 	mov	es:[di],	ax
-; 	mov	ax,	[bp + 6]
-; 	mov	es:[di],	ax
-;
-; 	sub	sp,	8
-; 	ret
-; max	endp
 
 write	proc	near
 	push	ax
