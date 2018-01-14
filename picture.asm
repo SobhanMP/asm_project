@@ -120,20 +120,25 @@ pwin	proc	near
 	push	bx
 	push	cx
 
+	push	si
+
 	mov	bx,	0
 	mov	cx,	wy
 
 	win10:	push	cx
 			mov	cx,	wx
 		win20:
-				mov	al,	[si + bx]
+				mov	al,	[si]
 				mov	window[bx],	al
 				inc	bx
+				inc	si
 				loop	win20
-		add	bx,	len
-		sub	bx,	wx
+		add	si,	len
+		sub	si,	wx
 		pop	cx
 		loop	win10
+
+	pop	si
 
 	pop	cx
 	pop	bx
@@ -201,12 +206,11 @@ wsort	proc	near
 	push	si
 
 	mov	di,	0
-	mov	si,	0
-	mov	bx,	0
 	xor	ah,	ah
-	mov	al,	window
 	ws5:
 		mov	si,	di
+		mov	bx,	si
+		mov	al,	window[si]
 		ws10:	cmp	al,	window[si]
 			jle	wss
 			mov	al,	window[si]
