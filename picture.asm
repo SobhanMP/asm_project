@@ -1,13 +1,13 @@
 ;convert -depth 8 -resize 200x200 lenna.png gray:input
 ;convert -depth 8 -size 200x200 gray:input output.png
 
-len	EQU	5
-area	EQU	25
-IFSIZE	EQU	25
-wx	EQU	3
-wy	EQU	3
-wa	EQU	9
-wm	EQU 	4
+len	EQU	200
+area	EQU	40000
+IFSIZE	EQU	40000
+wx	EQU	5
+wy	EQU	5
+wa	EQU	25
+wm	EQU 	12
 __data	segment
 
 ;file stuff
@@ -16,6 +16,12 @@ __data	segment
 	ofname	db	"C:\O"
 	ofc	db	"1"
 		db	0
+	;circle
+	mymask	db	0, 0, 1, 0, 0
+		db	0, 1, 1, 1, 0
+		db	1, 1, 1, 1, 1
+		db	0, 1, 1, 1, 0
+		db	0, 0, 1, 0, 0
 
 	window	db	wa	dup(0)
 
@@ -35,8 +41,8 @@ __data	segment
 	msg_error_write_image	db	"could not write image",	10,	13,	'$'
 	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
 	;	10,	13,	'$'
-	fcount	dw	3
-	func	dw	median,	iden,	mean
+	fcount	dw	5
+	func	dw	iden,	mean,	median, erosion, dilation
 
 
 	pic	db	IFSIZE	dup(0)
@@ -44,7 +50,7 @@ __data	segment
 __data	ends
 
 _output	segment
-	cip	db	IFSIZE	dup(3)
+	cip	db	IFSIZE	dup(-1)
 _output	ends
 
 _stack	segment	stack	'stack'
@@ -71,10 +77,11 @@ start:
 	mov	bx,	0
 	mov	cx,	fcount
 	ml5:
-		mov	fcount,	cx
 		mov	dx,	func[bx]
 		add	bx,	2
+
 		push	bx
+		push	cx
 		push	dx
 
 		mov	cx,	area
@@ -82,7 +89,9 @@ start:
 		lea	si,	pic
 		ml10:
 			call	pwin
+			push	dx
 			call	dx
+			pop	dx
 
 			mov	es:[di],	al
 			inc	di
@@ -97,9 +106,9 @@ start:
 		mov	ofc,	al
 
 		pop	dx
+		pop	cx
 		pop	bx
 
-		mov	cx,	fcount
 		mov	ax,	cx
 		call	print
 		loop	ml5
@@ -110,6 +119,54 @@ fin:	mov	ax,	4c00h
 	int	21h
 main	endp
 
+erosion	proc	near
+	push	bx
+	push	cx
+	push	dx
+
+	xor	ah,	ah
+	mov	bx,	0
+	mov	cx,	wa
+	mov	al,	window
+
+	er10:	cmp	mymask[bx],	0
+		je	ers1
+		cmp	al,	window[bx]
+		jle	ers1
+		mov	al,	window[bx]
+	ers1:	inc bx
+		loop	er10
+
+	pop	dx
+	pop	cx
+	pop	bx
+
+	ret
+erosion	endp
+
+dilation	proc	near
+	push	bx
+	push	cx
+	push	dx
+
+	mov	bx,	0
+	mov	cx,	wa
+	mov	al,	0
+
+	di10:	cmp	mymask[bx],	0
+		je	di1
+		cmp	al,	window[bx]
+		jge	di1
+		mov	al,	window[bx]
+	di1:	inc	bx
+		loop	di10
+
+	pop	dx
+	pop	cx
+	pop	bx
+
+	ret
+dilation	endp
 iden	proc	near
 	mov	al,	window
 	ret
