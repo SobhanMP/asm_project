@@ -1,9 +1,9 @@
 ;convert -depth 8 -resize 200x200 lenna.png gray:input
 ;convert -depth 8 -size 200x200 gray:input output.png
 
-len	EQU	200
-area	EQU	40000
-IFSIZE	EQU	40000
+len	EQU	5
+area	EQU	25
+IFSIZE	EQU	25
 wx	EQU	3
 wy	EQU	3
 wa	EQU	9
@@ -34,8 +34,8 @@ __data	segment
 	msg_error_write_image	db	"could not write image",	10,	13,	'$'
 	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
 	;	10,	13,	'$'
-	fcount	dw	2
-	func	dw	mean,	median
+	fcount	dw	3
+	func	dw	iden,	mean,	median
 
 	buffer	db	100	dup('$')
 	pic	db	IFSIZE	dup(0)
