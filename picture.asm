@@ -242,8 +242,10 @@ opening	proc	near
 	push	cx
 	push	dx
 	push	si
-	push	si
 	push	bp
+	push	ds
+	push	es
+
 	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
@@ -284,6 +286,9 @@ opening	proc	near
 
 	call	pwin
 	call	dilation
+
+	pop	es
+	pop	ds
 	pop	bp
 	pop	si
 	pop	dx
@@ -296,7 +301,6 @@ closing	proc	near
 	push	di
 	push	cx
 	push	dx
-	push	si
 	push	si
 	push	bp
 	mov	cx,	area
