@@ -50,7 +50,8 @@ __data	segment
 __data	ends
 
 _output	segment
-	cip	db	IFSIZE	dup(-1)
+	cip	db	IFSIZE	dup(-1)  
+	sec_cip IFSIZE dup(-1)
 _output	ends
 
 _stack	segment	stack	'stack'
@@ -224,6 +225,48 @@ sum	proc	near
 
 	ret
 sum	endp
+
+opening proc near
+	push di
+	push si
+	push cx
+	push dx
+	
+	mov	cx,	area
+	lea	di,	cip
+	lea	si,	pic
+	mov dx, erosion
+	first_in:
+		call pwin
+		push dx
+		call dx
+		pop	dx
+
+		mov	es:[di],al
+		inc	di
+		inc	si
+
+		loop first_in
+		
+		mov cx, area
+	    lea si, cip
+	    lea di, sec_cip
+	copy:       
+	     mov es:[di], es:[si]
+	     inc di
+	     inc si
+	     loop copy
+	lea si, sec_cip    
+	mov cx, area
+	mov dx, dilation
+	call pwin
+	call dx
+	
+	pop dx
+	pop cx
+	pop si
+	pop di   
+opening endp
 
 min	proc	near
 	push	bx
