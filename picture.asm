@@ -120,7 +120,7 @@ fin:	mov	ax,	4c00h
 	int	21h
 main	endp
 
-erosion	proc	near
+erosion	proc near
 	push	bx
 	push	cx
 	push	dx
@@ -228,9 +228,10 @@ sum	endp
 
 opening proc near
 	push di
-	push si
 	push cx
 	push dx
+	push si
+	push si
 	
 	mov	cx,	area
 	lea	di,	cip
@@ -256,15 +257,14 @@ opening proc near
 	     inc di
 	     inc si
 	     loop copy
-	lea si, sec_cip    
-	mov cx, area
+	pop si
+	add si, IFSIZE
 	mov dx, dilation
 	call pwin
 	call dx
-	
+	pop si
 	pop dx
 	pop cx
-	pop si
 	pop di   
 opening endp
 
