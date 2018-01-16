@@ -232,12 +232,12 @@ opening proc near
 	push dx
 	push si
 	push si
-	
+	push bp
 	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
 	mov dx, erosion
-	first_in:
+	open_in:
 		call pwin
 		push dx
 		call dx
@@ -247,26 +247,73 @@ opening proc near
 		inc	di
 		inc	si
 
-		loop first_in
+		loop open_in
 		
 		mov cx, area
 	    lea si, cip
 	    lea di, sec_cip
-	copy:       
-	     mov es:[di], es:[si]
+	copy_op:       
+	     mov bp, es:[si]
+	     mov es:[di], bp
 	     inc di
 	     inc si
-	     loop copy
+	     loop copy_op
 	pop si
 	add si, IFSIZE
 	mov dx, dilation
 	call pwin
 	call dx
+	pop bp
 	pop si
 	pop dx
 	pop cx
 	pop di   
 opening endp
+
+closing proc near
+	push di
+	push cx
+	push dx
+	push si
+	push si
+	push bp
+	mov	cx,	area
+	lea	di,	cip
+	lea	si,	pic
+	mov dx, dilation
+	close_in:
+		call pwin
+		push dx
+		call dx
+		pop	dx
+
+		mov	es:[di],al
+		inc	di
+		inc	si
+
+		loop close_in
+		
+		mov cx, area
+	    lea si, cip
+	    lea di, sec_cip
+	copy_cl:       
+	     mov bp, es:[si]                                      
+	     mov es:[di], bp
+	     inc di
+	     inc si
+	     loop copy_cl
+	pop si
+	add si, IFSIZE
+	mov dx, erosion
+	call pwin
+	call dx
+	pop bp
+	pop si
+	pop dx
+	pop cx
+	pop di   
+closing endp
+
 
 min	proc	near
 	push	bx
