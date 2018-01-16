@@ -41,8 +41,8 @@ __data	segment
 	msg_error_write_image	db	"could	not	write	image",	10,	13,	'$'
 	msg_error_write_close	db	"could	not	close	image",	10,	13,	'$'
 	;	10,	13,	'$'
-	func	dw	eroison,	dilation,	iden,	median,	mean,	-1
-	looplessfunc	dw	opening,	closing,	wtophat,	btophat
+
+	func	dw	opening,	closing,	wtophat,	btophat
 			dw	-1
 
 	pic	db	IFSIZE	dup(0)
@@ -115,16 +115,16 @@ start:
 		jmp	ml5
 	out10:
 	;call	loopless	filters
-	mov	bx,	0
-	ml30:	mov	dx,	looplessfunc[bx]
-		cmp	dx,	-1
-		je	out20
-		inc	bx
-		call	dx
-		mov	ax,	dx
-		call	print
-		jmp	ml30
-	out20:
+	; mov	bx,	0
+	; ml30:	mov	dx,	looplessfunc[bx]
+	; 	cmp	dx,	-1
+	; 	je	out20
+	; 	inc	bx
+	; 	call	dx
+	; 	mov	ax,	dx
+	; 	call	print
+	; 	jmp	ml30
+	; out20:
 
 	;retur	dos	2	style
 fin:	mov	ax,	4c00h
