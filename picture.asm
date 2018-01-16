@@ -267,7 +267,8 @@ opening proc near
 	pop si
 	pop dx
 	pop cx
-	pop di   
+	pop di
+	ret   
 opening endp
 
 closing proc near
@@ -311,9 +312,28 @@ closing proc near
 	pop si
 	pop dx
 	pop cx
-	pop di   
+	pop di
+	ret   
 closing endp
 
+wtophat proc near
+	push bx
+	mov bl, window[wm]
+	call opening
+	sub bl, al
+	mov al, bl
+	pop bx
+	ret   
+wtophat endp
+
+btophat proc near
+    push bx
+    mov bl, window[wm]
+    call closing
+    sub al, bl
+    pop bx
+    ret
+btophat endp
 
 min	proc	near
 	push	bx
