@@ -51,7 +51,7 @@ __data	ends
 
 _output	segment
 	cip	db	IFSIZE	dup(-1)  
-	sec_cip IFSIZE dup(-1)
+	sec_cip db IFSIZE dup(-1)
 _output	ends
 
 _stack	segment	stack	'stack'
