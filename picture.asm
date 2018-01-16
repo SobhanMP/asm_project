@@ -1,5 +1,5 @@
-;convert -depth 8 -resize 200x200 lenna.png gray:input
-;convert -depth 8 -size 200x200 gray:input output.png
+;convert	-depth	8	-resize	200x200	lenna.png	gray:input
+;convert	-depth	8	-size	200x200	gray:input	output.png
 
 len	EQU	200
 area	EQU	40000
@@ -7,52 +7,55 @@ IFSIZE	EQU	40000
 wx	EQU	5
 wy	EQU	5
 wa	EQU	25
-wm	EQU 	12
+wm	EQU		12
 __data	segment
 
-;file stuff
+;file	stuff
 	handle	dw	?
-	ifname	db	"C:\I", 0
+	ifname	db	"C:\I",	0
 	ofname	db	"C:\O"
 	ofc	db	"1"
 		db	0
 	;circle
-	mymask	db	0, 0, 1, 0, 0
-		db	0, 1, 1, 1, 0
-		db	1, 1, 1, 1, 1
-		db	0, 1, 1, 1, 0
-		db	0, 0, 1, 0, 0
+	mymask	db	0,	0,	1,	0,	0
+		db	0,	1,	1,	1,	0
+		db	1,	1,	1,	1,	1
+		db	0,	1,	1,	1,	0
+		db	0,	0,	1,	0,	0
 
 	window	db	wa	dup(0)
 
-	fread	db	"finished reading yahooo!!",	 10,	13,	'$'
-	msg_load_start	db	"starting reading",	10,	13,	'$'
-	msg_load_end	db	"finished reading",	10,	13,	'$'
-	msg_load_head	db	"skipped the header",	10,	13,	'$'
-	msg_load_read_start	db	"starting reading",	10,	13,	'$'
-	msg_load_read	db	"finihsed loading into the buffer",10,	13,	'$'
-	msg_load_open	db	"openned the file",	10,	13,	'$'
-	msg_write_start	db	"starting writing",  10,	13,	'$'
-	msg_write_end	db	"finished writing",  10,	13,	'$'
-	msg_error_load_open	db "could not open file",	10,	13,	'$'
-	msg_error_load_read	db "could not read header of file",	10,	13,	'$'
-	msg_error_write_create	db	"could not create file",	10,	13,	'$'
-	msg_error_write_header	db	"could not write header",	10,	13,	'$'
-	msg_error_write_image	db	"could not write image",	10,	13,	'$'
-	msg_error_write_close	db	"could	not close image",	10,	13,	'$'
+	fread	db	"finished	reading	yahooo!!",		10,	13,	'$'
+	msg_load_start	db	"starting	reading",	10,	13,	'$'
+	msg_load_end	db	"finished	reading",	10,	13,	'$'
+	msg_load_head	db	"skipped	the	header",	10,	13,	'$'
+	msg_load_read_start	db	"starting	reading",	10,	13,	'$'
+	msg_load_read	db	"finihsed	loading	into	the	buffer",10,	13,	'$'
+	msg_load_open	db	"openned	the	file",	10,	13,	'$'
+	msg_write_start	db	"starting	writing",		10,	13,	'$'
+	msg_write_end	db	"finished	writing",		10,	13,	'$'
+	msg_error_load_open	db	"could	not	open	file",	10,	13,	'$'
+	msg_error_load_read	db	"could	not	read	header	of	file",	10,	13,	'$'
+	msg_error_write_create	db	"could	not	create	file",	10,	13,	'$'
+	msg_error_write_header	db	"could	not	write	header",	10,	13,	'$'
+	msg_error_write_image	db	"could	not	write	image",	10,	13,	'$'
+	msg_error_write_close	db	"could	not	close	image",	10,	13,	'$'
 	;	10,	13,	'$'
-	fcount	dw	5
-	func	dw	iden,	mean,	median, erosion, dilation
-
+	func	dw	eroison,	dilation,	iden,	median,	mean,	-1
+	looplessfunc	dw	opening,	closing,	wtophat,	btophat
+			dw	-1
 
 	pic	db	IFSIZE	dup(0)
 	buffer	db	100	dup('$')
 __data	ends
 
 _output	segment
-	cip	db	IFSIZE	dup(-1)  
-	sec_cip db IFSIZE dup(-1)
+	cip	db	IFSIZE	dup(-1)
 _output	ends
+
+_temp	segment
+	sec_cip	db	IFSIZE	dup(-2)
+_temp	ends
 
 _stack	segment	stack	'stack'
 	dw	32000	dup('$')
@@ -69,23 +72,23 @@ start:
 	mov	ax,	_output
 	mov	es,	ax
 
-	call load
-
+	call	load
+	call	closing
 	mov	ah,	09h
 	lea	dx,	msg_load_end
 	int	21h
 
 	mov	bx,	0
-	mov	cx,	fcount
 	ml5:
 		mov	dx,	func[bx]
+		cmp	dx,	-1
+		je	out10
 		add	bx,	2
 
 		push	bx
 		push	cx
 		push	dx
 
-		mov	cx,	area
 		lea	di,	cip
 		lea	si,	pic
 		ml10:
@@ -100,11 +103,8 @@ start:
 
 			loop	ml10
 
-		call write
-		;change name
-		mov	al,	ofc
-		inc	al
-		mov	ofc,	al
+		call	write
+
 
 		pop	dx
 		pop	cx
@@ -112,15 +112,26 @@ start:
 
 		mov	ax,	cx
 		call	print
-		loop	ml5
+		jmp	ml5
+	out10:
+	;call	loopless	filters
+	mov	bx,	0
+	ml30:	mov	dx,	looplessfunc[bx]
+		cmp	dx,	-1
+		je	out20
+		inc	bx
+		call	dx
+		mov	ax,	dx
+		call	print
+		jmp	ml30
+	out20:
 
-
-	;retur dos 2 style
+	;retur	dos	2	style
 fin:	mov	ax,	4c00h
 	int	21h
 main	endp
 
-erosion	proc near
+erosion	proc	near
 	push	bx
 	push	cx
 	push	dx
@@ -135,7 +146,7 @@ erosion	proc near
 		cmp	al,	window[bx]
 		jle	ers1
 		mov	al,	window[bx]
-	ers1:	inc bx
+	ers1:	inc	bx
 		loop	er10
 
 	pop	dx
@@ -173,7 +184,7 @@ iden	proc	near
 	ret
 iden	endp
 
-;populate window
+;populate	window
 pwin	proc	near
 	push	bx
 	push	cx
@@ -226,114 +237,134 @@ sum	proc	near
 	ret
 sum	endp
 
-opening proc near
-	push di
-	push cx
-	push dx
-	push si
-	push si
-	push bp
+opening	proc	near
+	push	di
+	push	cx
+	push	dx
+	push	si
+	push	si
+	push	bp
 	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
-	mov dx, erosion
 	open_in:
-		call pwin
-		push dx
-		call dx
-		pop	dx
+		call	pwin
+		call	erosion
 
 		mov	es:[di],al
 		inc	di
 		inc	si
 
-		loop open_in
-		
-		mov cx, area
-	    lea si, cip
-	    lea di, sec_cip
-	copy_op:       
-	     mov bp, es:[si]
-	     mov es:[di], bp
-	     inc di
-	     inc si
-	     loop copy_op
-	pop si
-	add si, IFSIZE
-	mov dx, dilation
-	call pwin
-	call dx
-	pop bp
-	pop si
-	pop dx
-	pop cx
-	pop di
-	ret   
-opening endp
+		loop	open_in
 
-closing proc near
-	push di
-	push cx
-	push dx
-	push si
-	push si
-	push bp
+		mov	cx,	area
+
+		push	ds
+		push	es
+		push	ax
+
+		mov	ax,	_output
+		mov	ds,	ax
+		mov	ax,	_temp
+		mov	es,	ax
+		pop	ax
+		lea	si,	cip
+		lea	di,	sec_cip
+	copy_op:
+		mov	bp,	ds:[si]
+		mov	es:[di],	bp
+		inc	di
+		inc	si
+		loop	copy_op
+
+		pop	es
+		pop	ds
+	pop	si
+	add	si,	IFSIZE
+
+	call	pwin
+	call	dilation
+	pop	bp
+	pop	si
+	pop	dx
+	pop	cx
+	pop	di
+	ret
+opening	endp
+
+closing	proc	near
+	push	di
+	push	cx
+	push	dx
+	push	si
+	push	si
+	push	bp
 	mov	cx,	area
 	lea	di,	cip
 	lea	si,	pic
-	mov dx, dilation
 	close_in:
-		call pwin
-		push dx
-		call dx
-		pop	dx
+		call	pwin
+		call	dilation
 
 		mov	es:[di],al
 		inc	di
 		inc	si
 
-		loop close_in
-		
-		mov cx, area
-	    lea si, cip
-	    lea di, sec_cip
-	copy_cl:       
-	     mov bp, es:[si]                                      
-	     mov es:[di], bp
-	     inc di
-	     inc si
-	     loop copy_cl
-	pop si
-	add si, IFSIZE
-	mov dx, erosion
-	call pwin
-	call dx
-	pop bp
-	pop si
-	pop dx
-	pop cx
-	pop di
-	ret   
-closing endp
+		loop	close_in
 
-wtophat proc near
-	push bx
-	mov bl, window[wm]
-	call opening
-	sub bl, al
-	mov al, bl
-	pop bx
-	ret   
-wtophat endp
+		mov	cx,	area
 
-btophat proc near
-    push bx
-    mov bl, window[wm]
-    call closing
-    sub al, bl
-    pop bx
-    ret
-btophat endp
+		push	ds
+		push	es
+		push	ax
+
+		mov	ax,	_output
+		mov	ds,	ax
+		mov	ax,	_temp
+		mov	es,	ax
+		pop	ax
+		lea	si,	cip
+		lea	di,	sec_cip
+	copy_cl:
+		mov	bp,	ds:[si]
+		mov	es:[di],	bp
+		inc	di
+		inc	si
+		loop	copy_cl
+
+		pop	es
+		pop	ds
+
+	pop	si
+	add	si,	IFSIZE
+	call	pwin
+	call	erosion
+	pop	bp
+	pop	si
+	pop	dx
+	pop	cx
+	pop	di
+	ret
+closing	endp
+
+wtophat	proc	near
+	push	bx
+	mov	bl,	window[wm]
+	call	opening
+	sub	bl,	al
+	mov	al,	bl
+	pop	bx
+	ret
+wtophat	endp
+
+btophat	proc	near
+		push	bx
+		mov	bl,	window[wm]
+		call	closing
+		sub	al,	bl
+		pop	bx
+		ret
+btophat	endp
 
 min	proc	near
 	push	bx
@@ -416,7 +447,7 @@ write	proc	near
 	lea	dx,	msg_write_start
 	int	21h
 
-	;create a new file
+	;create	a	new	file
 	mov	ah,	3ch
 	mov	cx,	0
 	lea	dx,	ofname
@@ -427,7 +458,7 @@ write	proc	near
 
 	mov	ax,	_output
 	mov	ds,	ax
-	;write picture
+	;write	picture
 	mov	ah,	40h
 	mov	cx,	IFSIZE
 	lea	dx,	cip
@@ -437,7 +468,7 @@ write	proc	near
 	mov	ds,	ax
 
 	jb	wer30
-	;close file
+	;close	file
 	mov	ah,	3eh
 	int	21h
 	jb	wer40
@@ -445,6 +476,9 @@ write	proc	near
 	lea	dx,	msg_write_end
 	int	21h
 
+	mov	al,	ofc
+	inc	al
+	mov	ofc,	al
 
 	pop	dx
 	pop	cx
@@ -467,7 +501,7 @@ write	proc	near
 	jmp	fin
 write	endp
 
-;this loads the picture
+;this	loads	the	picture
 load	proc	near
 	push	ax
 	push	bx
@@ -476,8 +510,8 @@ load	proc	near
 
 	push	di
 	push	si
-	; call print
-	;read file
+	;	call	print
+	;read	file
 	lea	dx,	ifname
 	mov	al,	0;read
 	mov	ah,	3dh;
@@ -528,36 +562,36 @@ owari:	pop	si
 	ret
 load	endp
 
-print	proc	near;print ax
-	;save registers we are going to use
+print	proc	near;print	ax
+	;save	registers	we	are	going	to	use
 	push	ax
 	push	bx
 	push	cx
 	push	dx
 	push	di
-	;prepare for saving
+	;prepare	for	saving
 	mov	bx,	10
 	mov	di,	31
 	mov	cx,	ax
 	conv:	mov	dx,	0
 		div	bx
-		;store the remainder's character
+		;store	the	remainder's	character
 		add	dl,	'0'
-		mov	buffer[2 + di],	dl
-		;fix ax to be the number it's supposed to be
+		mov	buffer[2	+	di],	dl
+		;fix	ax	to	be	the	number	it's	supposed	to	be
 		dec	di
 
-		;end of loop condition
+		;end	of	loop	condition
 		cmp	ax,	0
 		jne	conv
 
-	;since di + 1 + buffer points to the beginning of the string
-	;and there is a $ sign at the end we can use this
+	;since	di	+	1	+	buffer	points	to	the	beginning	of	the	string
+	;and	there	is	a	$	sign	at	the	end	we	can	use	this
 	inc	di
-	lea	dx,	buffer[2 + di]
+	lea	dx,	buffer[2	+	di]
 	mov	ah,	09H
 	int	21h
-	;restor old flags
+	;restor	old	flags
 	pop	di
 	pop	dx
 	pop	cx
