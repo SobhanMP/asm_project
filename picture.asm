@@ -11,6 +11,11 @@ wm	EQU		12
 __data	segment
 	
 	window	db	wa	dup(0)
+	mymask	db	0,	0,	1,	0,	0
+		db	0,	1,	1,	1,	0
+		db	1,	1,	1,	1,	1
+		db	0,	1,	1,	1,	0
+		db	0,	0,	1,	0,	0
 ;file	stuff
 	handle	dw	?
 	ifname	db	"C:\I",	0
@@ -18,11 +23,7 @@ __data	segment
 	ofc	db	"1"
 		db	0
 	;circle
-	mymask	db	0,	0,	1,	0,	0
-		db	0,	1,	1,	1,	0
-		db	1,	1,	1,	1,	1
-		db	0,	1,	1,	1,	0
-		db	0,	0,	1,	0,	0
+
 
 
 	fread	db	"finished	reading	yahooo!!",		10,	13,	'$'
@@ -42,7 +43,7 @@ __data	segment
 	msg_error_write_close	db	"could	not	close	image",	10,	13,	'$'
 	;	10,	13,	'$'
 	func	dw	erosion,	dilation,	iden,	median,	mean,	-1
-	looplessfunc	dw	opening,	closing,	wtophat,	btophat
+	looplessfunc	dw	opening
 			dw	-1
 
 	pic	db	IFSIZE	dup(0)
@@ -56,6 +57,11 @@ _output	ends
 _temp	segment
 	
 		db	wa	dup(0)
+		db	0,	0,	1,	0,	0
+		db	0,	1,	1,	1,	0
+		db	1,	1,	1,	1,	1
+		db	0,	1,	1,	1,	0
+		db	0,	0,	1,	0,	0
 	sec_cip	db	IFSIZE	dup(-2)
 _temp	ends
 
@@ -121,7 +127,7 @@ start:
 	ml30:	mov	dx,	looplessfunc[bx]
 		cmp	dx,	-1
 		je	out20
-		inc	bx
+		add	bx,	2
 		call	dx
 		mov	ax,	dx
 		call	print
@@ -277,9 +283,9 @@ opening	proc	near
 		
 		mov	ax,	__data
 		mov	ds,	ax
-		mov	ax,	_temp
+		mov	ax,	_output
 		mov	es,	ax
-
+		call	print
 		call	write
 	pop	bx
 	ret
