@@ -9,7 +9,8 @@ wy	EQU	5
 wa	EQU	25
 wm	EQU		12
 __data	segment
-
+	
+	window	db	wa	dup(0)
 ;file	stuff
 	handle	dw	?
 	ifname	db	"C:\I",	0
@@ -23,7 +24,6 @@ __data	segment
 		db	0,	1,	1,	1,	0
 		db	0,	0,	1,	0,	0
 
-	window	db	wa	dup(0)
 
 	fread	db	"finished	reading	yahooo!!",		10,	13,	'$'
 	msg_load_start	db	"starting	reading",	10,	13,	'$'
@@ -41,8 +41,8 @@ __data	segment
 	msg_error_write_image	db	"could	not	write	image",	10,	13,	'$'
 	msg_error_write_close	db	"could	not	close	image",	10,	13,	'$'
 	;	10,	13,	'$'
-	func	dw	erosion,	dilation,	iden,	median,	mean
-		dw	opening,	closing,	wtophat,	btophat
+	func	dw	erosion,	dilation,	iden,	median,	mean,	-1
+	looplessfunc	dw	opening,	closing,	wtophat,	btophat
 			dw	-1
 
 	pic	db	IFSIZE	dup(0)
@@ -54,6 +54,8 @@ _output	segment
 _output	ends
 
 _temp	segment
+	
+		db	wa	dup(0)
 	sec_cip	db	IFSIZE	dup(-2)
 _temp	ends
 
@@ -78,52 +80,52 @@ start:
 	int	21h
 
 	mov	bx,	0
-	ml5:
-		mov	dx,	func[bx]
-		cmp	dx,	-1
-		je	out10
-		add	bx,	2
-
-		push	bx
-		push	cx
-		push	dx
-
-		mov	cx,	IFSIZE
-		lea	di,	cip
-		lea	si,	pic
-		ml10:
-			call	pwin
-			push	dx
-			call	dx
-			pop	dx
-
-			mov	es:[di],	al
-			inc	di
-			inc	si
-
-			loop	ml10
-
-		call	write
-
-
-		pop	dx
-		pop	cx
-		pop	bx
-
-		mov	ax,	dx
-		call	print
-		jmp	ml5
-	out10:
-	; ;call	loopless	filters
-	; mov	bx,	0
-	; ml30:	mov	dx,	looplessfunc[bx]
+	; ml5:
+	; 	mov	dx,	func[bx]
 	; 	cmp	dx,	-1
-	; 	je	out20
-	; 	inc	bx
-	; 	call	dx
+	; 	je	out10
+	; 	add	bx,	2
+
+	; 	push	bx
+	; 	push	cx
+	; 	push	dx
+
+	; 	mov	cx,	IFSIZE
+	; 	lea	di,	cip
+	; 	lea	si,	pic
+	; 	ml10:
+	; 		call	pwin
+	; 		push	dx
+	; 		call	dx
+	; 		pop	dx
+
+	; 		mov	es:[di],	al
+	; 		inc	di
+	; 		inc	si
+
+	; 		loop	ml10
+
+	; 	call	write
+
+
+	; 	pop	dx
+	; 	pop	cx
+	; 	pop	bx
+
 	; 	mov	ax,	dx
 	; 	call	print
-	; 	jmp	ml30
+	; 	jmp	ml5
+	; out10:
+	;call	loopless	filters
+	mov	bx,	0
+	ml30:	mov	dx,	looplessfunc[bx]
+		cmp	dx,	-1
+		je	out20
+		inc	bx
+		call	dx
+		mov	ax,	dx
+		call	print
+		jmp	ml30
 	out20:
 
 	;retur	dos	2	style
@@ -238,62 +240,48 @@ sum	proc	near
 sum	endp
 
 opening	proc	near
-	push	di
-	push	cx
-	push	dx
-	push	si
-	push	bp
-	push	ds
-	push	es
-
-	mov	cx,	area
-	lea	di,	cip
-	lea	si,	pic
-	open_in:
-		call	pwin
-		call	erosion
-
-		mov	es:[di],al
-		inc	di
-		inc	si
-
-		loop	open_in
-
-		mov	cx,	area
-
-		push	ds
-		push	es
-		push	ax
-
-		mov	ax,	_output
+	push	bx
+		mov	ax,	__data
 		mov	ds,	ax
 		mov	ax,	_temp
 		mov	es,	ax
-		pop	ax
-		lea	si,	cip
+
+		mov	cx,	IFSIZE
+		mov	bx,	0
+		lea	si,	pic
 		lea	di,	sec_cip
-	copy_op:
-		mov	bp,	ds:[si]
-		mov	es:[di],	bp
-		inc	di
-		inc	si
-		loop	copy_op
 
-		pop	es
-		pop	ds
-	pop	si
-	add	si,	IFSIZE
+		op10:	call	pwin
+			call	erosion
+			mov	es:[di],	al
+			inc	di
+			inc	si
+			loop	op10
+		
+		mov	ax,	_temp
+		mov	ds,	ax
+		mov	ax,	_output
+		mov	es,	ax
 
-	call	pwin
-	call	dilation
+		mov	cx,	IFSIZE
+		mov	bx,	0
+		lea	si,	sec_cip
+		lea	di,	cip
 
-	pop	es
-	pop	ds
-	pop	bp
-	pop	si
-	pop	dx
-	pop	cx
-	pop	di
+		op20:	call	pwin
+			call	dilation
+			mov	es:[di],	al
+			inc	di
+			inc	si
+			loop	op20
+		
+		mov	ax,	__data
+		mov	ds,	ax
+		mov	ax,	_temp
+		mov	es,	ax
+
+		call	write
+	pop	bx
 	ret
 opening	endp
 
