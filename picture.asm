@@ -1,9 +1,9 @@
 ;convert	-depth	8	-resize	200x200	lenna.png	gray:input
 ;convert	-depth	8	-size	200x200	gray:input	output.png
 
-len	EQU	200
-area	EQU	40000
-IFSIZE	EQU	40000
+len	EQU	5
+area	EQU	25
+IFSIZE	EQU	25
 wx	EQU	5
 wy	EQU	5
 wa	EQU	25
@@ -43,7 +43,7 @@ __data	segment
 	msg_error_write_close	db	"could	not	close	image",	10,	13,	'$'
 	;	10,	13,	'$'
 	func	dw	erosion,	dilation,	iden,	median,	mean,	-1
-	looplessfunc	dw	opening
+	looplessfunc	dw	opening, closing, wtophat, btophat
 			dw	-1
 
 	pic	db	IFSIZE	dup(0)
@@ -291,77 +291,92 @@ opening	proc	near
 	ret
 opening	endp
 
+
 closing	proc	near
-	push	di
-	push	cx
-	push	dx
-	push	si
-	push	bp
-	mov	cx,	area
-	lea	di,	cip
-	lea	si,	pic
-	close_in:
-		call	pwin
-		call	dilation
-
-		mov	es:[di],al
-		inc	di
-		inc	si
-
-		loop	close_in
-
-		mov	cx,	area
-
-		push	ds
-		push	es
-		push	ax
-
-		mov	ax,	_output
+	push	bx
+		mov	ax,	__data
 		mov	ds,	ax
 		mov	ax,	_temp
 		mov	es,	ax
-		pop	ax
-		lea	si,	cip
+
+		mov	cx,	IFSIZE
+		mov	bx,	0
+		lea	si,	pic
 		lea	di,	sec_cip
-	copy_cl:
-		mov	bp,	ds:[si]
-		mov	es:[di],	bp
-		inc	di
-		inc	si
-		loop	copy_cl
 
-		pop	es
-		pop	ds
+		cl10:	call	pwin
+			call	dilation
+			mov	es:[di],	al
+			inc	di
+			inc	si
+			loop	cl10
+		
+		mov	ax,	_temp
+		mov	ds,	ax
+		mov	ax,	_output
+		mov	es,	ax
 
-	pop	si
-	add	si,	IFSIZE
-	call	pwin
-	call	erosion
-	pop	bp
-	pop	si
-	pop	dx
-	pop	cx
-	pop	di
+		mov	cx,	IFSIZE
+		mov	bx,	0
+		lea	si,	sec_cip
+		lea	di,	cip
+
+		cl20:	call	pwin
+			call	erosion
+			mov	es:[di],	al
+			inc	di
+			inc	si
+			loop	cl20
+		
+		mov	ax,	__data
+		mov	ds,	ax
+		mov	ax,	_output
+		mov	es,	ax
+		call	print
+		call	write
+	pop	bx
 	ret
 closing	endp
 
 wtophat	proc	near
-	push	bx
-	mov	bl,	window[wm]
-	call	opening
-	sub	bl,	al
-	mov	al,	bl
+	push bx
+	push cx
+	call opening
+	mov bx, 0
+	mov cx, IFSIZE
+    w_in10:  
+    mov ah, ds:pic[bx]
+    mov al, es:cip[bx]
+    sub ah, al
+    mov al, ah
+    mov es:cip[bx], al
+    inc bx
+    loop w_in10	
+	pop cx
 	pop	bx
-	ret
+	call print
+	call write
+	ret 
 wtophat	endp
 
 btophat	proc	near
-		push	bx
-		mov	bl,	window[wm]
-		call	closing
-		sub	al,	bl
-		pop	bx
-		ret
+	push	bx
+	push cx
+	call closing
+	mov bx, 0
+	mov cx, IFSIZE
+    b_in10:  
+    mov ah, ds:pic[bx]
+    mov al, es:cip[bx]
+    sub al, ah
+    mov es:cip[bx], al
+    inc bx
+    loop b_in10	
+	pop cx
+	pop	bx    
+	call print
+	call write
+	ret
 btophat	endp
 
 min	proc	near
